@@ -75,6 +75,11 @@ export function generatePlayer(league, index) {
     damage: rand(12000, 35000),
     gold: rand(8000, 18000),
     vision: parseFloat(randF(0.8, 3.2)),
+    mostPlayedChamps: Array.from({ length: 5 }, (_, i) => ({
+      champion: CHAMPIONS[rand(0, CHAMPIONS.length - 1)],
+      games: rand(5, 25),
+      wins: rand(3, 20),
+    })),
   };
 }
 
@@ -98,6 +103,27 @@ export function generateMatch(player) {
     league: player.league,
   };
 }
+
+// Scheduled matches for calendar
+export const SCHEDULED_MATCHES = [
+  // CBLOL
+  { id: 'sch-1', league: 'CBLOL', team1: 'LOUD', team2: 'paiN Gaming', team1Logo: '🔊', team2Logo: '🎯', date: '2026-01-15', time: '18:00', stage: 'Semifinal', bestOf: 5 },
+  { id: 'sch-2', league: 'CBLOL', team1: 'FURIA', team2: 'Fluxo', team1Logo: '🐾', team2Logo: '⚡', date: '2026-01-16', time: '19:00', stage: 'Semifinal', bestOf: 5 },
+  { id: 'sch-3', league: 'CBLOL', team1: 'RED Canids', team2: 'INTZ', team1Logo: '🔺', team2Logo: '🔴', date: '2026-01-18', time: '17:00', stage: 'Final', bestOf: 5 },
+  // LCK
+  { id: 'sch-4', league: 'LCK', team1: 'T1', team2: 'Gen.G', team1Logo: '🏆', team2Logo: '🟡', date: '2026-01-14', time: '11:00', stage: 'Regular Season', bestOf: 3 },
+  { id: 'sch-5', league: 'LCK', team1: 'DRX', team2: 'Hanwha Life Esports', team1Logo: '🐉', team2Logo: '🦅', date: '2026-01-15', time: '11:00', stage: 'Regular Season', bestOf: 3 },
+  { id: 'sch-6', league: 'LCK', team1: 'Dplus KIA', team2: 'T1', team1Logo: '🚗', team2Logo: '🏆', date: '2026-01-17', time: '10:00', stage: 'Regular Season', bestOf: 3 },
+  // LEC
+  { id: 'sch-7', league: 'LEC', team1: 'G2 Esports', team2: 'Fnatic', team1Logo: '🎮', team2Logo: '🟠', date: '2026-01-16', time: '15:00', stage: 'Regular Season', bestOf: 1 },
+  { id: 'sch-8', league: 'LEC', team1: 'MAD Lions', team2: 'Team BDS', team1Logo: '🦁', team2Logo: '🔵', date: '2026-01-17', time: '16:00', stage: 'Regular Season', bestOf: 1 },
+  // LCS
+  { id: 'sch-9', league: 'LCS', team1: 'Cloud9', team2: 'Team Liquid', team1Logo: '☁️', team2Logo: '🌊', date: '2026-01-18', time: '20:00', stage: 'Regular Season', bestOf: 1 },
+  { id: 'sch-10', league: 'LCS', team1: '100 Thieves', team2: 'Cloud9', team1Logo: '💯', team2Logo: '☁️', date: '2026-01-19', time: '21:00', stage: 'Regular Season', bestOf: 1 },
+  // LPL
+  { id: 'sch-11', league: 'LPL', team1: 'JD Gaming', team2: 'Bilibili Gaming', team1Logo: '🔴', team2Logo: '📺', date: '2026-01-14', time: '08:00', stage: 'Regular Season', bestOf: 3 },
+  { id: 'sch-12', league: 'LPL', team1: 'EDward Gaming', team2: 'Top Esports', team1Logo: '👑', team2Logo: '🔝', date: '2026-01-15', time: '09:00', stage: 'Regular Season', bestOf: 3 },
+];
 
 export const NEWS = [
   { title: 'T1 domina LCK com campanha perfeita na etapa regular', source: 'Liquipedia', date: 'há 2h', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=340&fit=crop', summary: 'A equipe de Faker continua imbatível na LCK 2026, com 18 vitórias consecutivas e um KDA coletivo impressionante.' },
@@ -127,3 +153,4 @@ export const getAllPlayers = () => Object.values(PLAYERS).flat();
 export const getAllMatches = () => Object.values(MATCHES).flat();
 export const getTopPlayers = (count = 8) => getAllPlayers().sort((a, b) => b.kda - a.kda).slice(0, count);
 export const getPlayerById = (playerId, league) => PLAYERS[league]?.find(p => p.id === playerId);
+export const getScheduledMatches = () => SCHEDULED_MATCHES.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));

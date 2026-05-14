@@ -1,32 +1,10 @@
 import { useState } from 'react';
 import { LeagueTabs, RankingsTable } from '../components/home/RankingsSection';
-import { PlayersGrid } from '../components/players/PlayerCard';
-import { MatchesFeed } from '../components/matches/MatchCard';
-import { NewsGrid } from '../components/news/NewsCard';
-import { ChartsSection } from '../components/charts/ChartsSection';
-import { api } from '../services/api';
-import { useEffect } from 'react';
+import { TopChampionsChart, TopKDAChart } from '../components/home/StatsCharts';
 
 export function Home() {
   const [currentLeague, setCurrentLeague] = useState('CBLOL');
-  const [topPlayers, setTopPlayers] = useState([]);
-  const [news, setNews] = useState([]);
-  const [recentMatches, setRecentMatches] = useState([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const [top, newsData, matches] = await Promise.all([
-        api.getTopPlayers(8),
-        api.getNews(),
-        api.getRecentMatches(),
-      ]);
-      setTopPlayers(top);
-      setNews(newsData);
-      setRecentMatches(matches.slice(0, 10));
-    };
-    loadData();
-  }, []);
-
+  
   return (
     <div className="animate-fadeIn">
       {/* Hero Section */}
@@ -63,23 +41,24 @@ export function Home() {
         </div>
       </section>
 
-      {/* Rankings Section */}
+      {/* Charts Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="font-display font-bold text-2xl text-white mb-6">
+          <span className="text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
+            Estatísticas Globais
+          </span>
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <TopChampionsChart />
+          <TopKDAChart />
+        </div>
+      </section>
+
+      {/* Rankings Section - Main Content */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <LeagueTabs currentLeague={currentLeague} onLeagueChange={setCurrentLeague} />
         <RankingsTable league={currentLeague} />
       </section>
-
-      {/* Top Players */}
-      <PlayersGrid players={topPlayers} title="Destaques" />
-
-      {/* Charts */}
-      <ChartsSection />
-
-      {/* News */}
-      <NewsGrid news={news} />
-
-      {/* Recent Matches */}
-      <MatchesFeed matches={recentMatches} />
     </div>
   );
 }
