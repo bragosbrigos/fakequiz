@@ -108,14 +108,14 @@ export function RankingsTable({ league }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-300">{player.team}</td>
-                  <td className="px-6 py-4 text-center font-display font-bold text-sm {kdaColor}">{player.kda.toFixed(2)}</td>
+                  <td className={`px-6 py-4 text-center font-display font-bold text-sm ${kdaColor}`}>{player.kda.toFixed(2)}</td>
                   <td className="px-6 py-4 text-center text-sm text-gray-300">{player.csPerMin.toFixed(1)}</td>
                   <td className="px-6 py-4 text-center text-sm text-gray-300">{player.kp}%</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`font-display font-bold text-sm ${wrColor}`}>{player.wr}%</span>
                     <div className="w-full bg-dark-300 rounded-full h-1.5 mt-1">
                       <div
-                        className={`win-rate-bar h-1.5 rounded-full transition-all duration-1000 ${
+                        className={`h-1.5 rounded-full transition-all duration-1000 ${
                           player.wr >= 60 ? 'bg-green-500' : player.wr >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                         }`}
                         style={{ width: `${player.wr}%` }}

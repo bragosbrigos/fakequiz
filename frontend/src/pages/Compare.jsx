@@ -1,0 +1,193 @@
+import { useState } from 'react';
+import { Radar } from 'react-chartjs-2';
+import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import { getAllPlayers, TEAMS } from '../data/mockData';
+
+ChartJS.register(RadialLinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler);
+
+export function Compare() {
+  const allPlayers = getAllPlayers();
+  const [player1Id, setPlayer1Id] = useState('');
+  const [player2Id, setPlayer2Id] = useState('');
+
+  const player1 = allPlayers.find(p => p.id === player1Id);
+  const player2 = allPlayers.find(p => p.id === player2Id);
+
+  const radarData = {
+    labels: ['KDA', 'CS/min', 'KP%', 'WR%', 'Dano', 'Ouro'],
+    datasets: [
+      {
+        label: player1?.name || 'Jogador 1',
+        data: player1 ? [
+          player1.kda,
+          player1.csPerMin * 10,
+          player1.kp,
+          player1.wr,
+          player1.damage / 500,
+          player1.gold / 200,
+        ] : [0, 0, 0, 0, 0, 0],
+        backgroundColor: 'rgba(240, 192, 64, 0.2)',
+        borderColor: 'rgba(240, 192, 64, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(240, 192, 64, 1)',
+      },
+      {
+        label: player2?.name || 'Jogador 2',
+        data: player2 ? [
+          player2.kda,
+          player2.csPerMin * 10,
+          player2.kp,
+          player2.wr,
+          player2.damage / 500,
+          player2.gold / 200,
+        ] : [0, 0, 0, 0, 0, 0],
+        backgroundColor: 'rgba(10, 200, 185, 0.2)',
+        borderColor: 'rgba(10, 200, 185, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(10, 200, 185, 1)',
+      },
+    ],
+  };
+
+  const radarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: '#9CA3AF', font: { size: 12 } },
+      },
+      title: {
+        display: true,
+        text: 'Comparação de Estatísticas',
+        color: '#F0C040',
+        font: { size: 16, weight: 'bold' },
+      },
+    },
+    scales: {
+      r: {
+        angleLines: { color: 'rgba(55, 65, 81, 0.5)' },
+        grid: { color: 'rgba(55, 65, 81, 0.5)' },
+        pointLabels: { color: '#9CA3AF', font: { size: 11 } },
+        ticks: { display: false },
+      },
+    },
+  };
+
+  return (
+    <div className="pt-24 pb-12 min-h-screen animate-fadeIn">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="font-display font-bold text-3xl text-white mb-8">
+          <span className="text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
+            Comparar Jogadores
+          </span>
+        </h1>
+
+        {/* Selectors */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Jogador 1</label>
+            <select
+              value={player1Id}
+              onChange={(e) => setPlayer1Id(e.target.value)}
+              className="w-full bg-dark-100 border border-gray-700/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-600/40"
+            >
+              <option value="">Selecione...</option>
+              {allPlayers.map(p => (
+                <option key={p.id} value={p.id}>{p.name} - {p.team}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Jogador 2</label>
+            <select
+              value={player2Id}
+              onChange={(e) => setPlayer2Id(e.target.value)}
+              className="w-full bg-dark-100 border border-gray-700/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-600/40"
+            >
+              <option value="">Selecione...</option>
+              {allPlayers.map(p => (
+                <option key={p.id} value={p.id}>{p.name} - {p.team}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {player1 && player2 && (
+          <>
+            {/* Radar Chart */}
+            <div className="bg-dark-100 border border-gray-700/30 rounded-2xl p-6 mb-8 h-96">
+              <Radar data={radarData} options={radarOptions} />
+            </div>
+
+            {/* Stats Comparison Cards */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Player 1 Card */}
+              <div className="bg-gradient-to-br from-gold-600/10 to-dark-100 border border-gold-600/30 rounded-2xl p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-400/20 to-gold-600/20 border border-gold-600/30 flex items-center justify-center text-2xl">
+                    {player1.teamLogo}
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white">{player1.name}</h3>
+                    <p className="text-gray-400 text-sm">{player1.team} • {player1.role}</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <StatRow label="KDA" value={player1.kda.toFixed(2)} />
+                  <StatRow label="CS/min" value={player1.csPerMin.toFixed(1)} />
+                  <StatRow label="KP%" value={`${player1.kp}%`} />
+                  <StatRow label="WR%" value={`${player1.wr}%`} highlight={player1.wr >= 60} />
+                  <StatRow label="Partidas" value={player1.games} />
+                </div>
+              </div>
+
+              {/* VS Badge */}
+              <div className="flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-dark-200 border border-gray-700/30 flex items-center justify-center">
+                  <span className="font-display font-black text-2xl text-gray-500">VS</span>
+                </div>
+              </div>
+
+              {/* Player 2 Card */}
+              <div className="bg-gradient-to-br from-accent-blue/10 to-dark-100 border border-accent-blue/30 rounded-2xl p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-blue/20 to-accent-blue/30 border border-accent-blue/30 flex items-center justify-center text-2xl">
+                    {player2.teamLogo}
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white">{player2.name}</h3>
+                    <p className="text-gray-400 text-sm">{player2.team} • {player2.role}</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <StatRow label="KDA" value={player2.kda.toFixed(2)} />
+                  <StatRow label="CS/min" value={player2.csPerMin.toFixed(1)} />
+                  <StatRow label="KP%" value={`${player2.kp}%`} />
+                  <StatRow label="WR%" value={`${player2.wr}%`} highlight={player2.wr >= 60} />
+                  <StatRow label="Partidas" value={player2.games} />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {!player1 && !player2 && (
+          <div className="text-center py-16 text-gray-500">
+            Selecione dois jogadores para comparar suas estatísticas
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatRow({ label, value, highlight }) {
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-gray-700/20 last:border-0">
+      <span className="text-gray-400 text-sm">{label}</span>
+      <span className={`font-display font-bold ${highlight ? 'text-green-400' : 'text-white'}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
