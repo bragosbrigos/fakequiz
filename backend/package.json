@@ -1,0 +1,17 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend API for LoL Stats - News RSS Integration",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.0",
+    "rss-parser": "^3.13.0"
+  }
+}
