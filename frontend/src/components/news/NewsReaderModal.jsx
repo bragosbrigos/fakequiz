@@ -9,7 +9,15 @@ export function NewsReaderModal({ news, onClose }) {
   useEffect(() => {
     const loadContent = async () => {
       if (!news?.url) {
-        setError('URL da notícia não disponível');
+        // Se não tiver URL, usa o conteúdo direto do objeto news
+        setContent({
+          title: news?.title || 'Notícia',
+          content: news?.fullContent || news?.summary || news?.description || 'Conteúdo não disponível',
+          imageUrl: news?.img || news?.imageUrl,
+          publishedAt: news?.date || news?.publishedAt,
+          author: news?.author,
+          source: news?.source || 'Desconhecido'
+        });
         setLoading(false);
         return;
       }
@@ -21,7 +29,16 @@ export function NewsReaderModal({ news, onClose }) {
         setError(null);
       } catch (err) {
         console.error('Erro ao carregar conteúdo:', err);
-        setError(err.message || 'Erro ao carregar conteúdo da notícia');
+        // Fallback: usa conteúdo disponível no objeto news
+        setContent({
+          title: news?.title || 'Notícia',
+          content: news?.fullContent || news?.summary || news?.description || 'Conteúdo não disponível',
+          imageUrl: news?.img || news?.imageUrl,
+          publishedAt: news?.date || news?.publishedAt,
+          author: news?.author,
+          source: news?.source || 'Desconhecido'
+        });
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -29,17 +46,6 @@ export function NewsReaderModal({ news, onClose }) {
 
     loadContent();
   }, [news]);
-
-  // Se a URL for do Google News ou inválida, abre em nova aba
-  const shouldOpenExternal = !news?.url || 
-    news.url.includes('news.google.com') || 
-    news.url === '#';
-
-  const handleOpenExternal = () => {
-    if (news?.url && news.url !== '#') {
-      window.open(news.url, '_blank', 'noopener,noreferrer');
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -65,7 +71,7 @@ export function NewsReaderModal({ news, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
           {loading ? (
             <div className="space-y-4 animate-pulse">
               <div className="h-64 bg-dark-200 rounded-xl"></div>
@@ -75,20 +81,6 @@ export function NewsReaderModal({ news, onClose }) {
                 <div className="h-4 bg-dark-200 rounded"></div>
                 <div className="h-4 bg-dark-200 rounded w-5/6"></div>
               </div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📰</div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Não foi possível carregar o conteúdo
-              </h3>
-              <p className="text-gray-400 mb-6">{error}</p>
-              <button
-                onClick={handleOpenExternal}
-                className="px-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-gold-500/25 transition-all"
-              >
-                Abrir no navegador externo
-              </button>
             </div>
           ) : content ? (
             <article className="prose prose-invert max-w-none">
@@ -112,27 +104,6 @@ export function NewsReaderModal({ news, onClose }) {
               <p className="text-gray-400">Conteúdo não disponível</p>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-700/30 flex justify-between items-center">
-          <a
-            href={news?.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gold-400 hover:text-gold-300 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Abrir original
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-dark-200 text-gray-300 rounded-lg hover:bg-dark-300 transition-colors text-sm"
-          >
-            Fechar
-          </button>
         </div>
       </div>
     </div>
