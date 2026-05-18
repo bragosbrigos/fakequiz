@@ -2,13 +2,14 @@
 # Dependencies
 node_modules/
 
-# Logs and temp files
-*.log
-
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
+
+# Logs and temp files
+*.log
+*.tmp
 
 # Editors
 .vscode/
@@ -22,7 +23,20 @@ __pycache__/
 .Python
 venv/
 .venv/
-.env
-.env.local
-.env.*
+env/
+ENV/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# OS generated files
+.DS_Store
+Thumbs.db
 ```

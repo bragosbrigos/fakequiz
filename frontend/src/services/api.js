@@ -1,12 +1,11 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Mock data fallback
+// Mock data fallback para outras funcionalidades
 import { PLAYERS, MATCHES, NEWS, getAllPlayers, getTopPlayers, getPlayerById, generateMatch } from '../data/mockData';
 
 export const api = {
   // Get rankings by league
   getRankings: async (league) => {
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 100));
     return PLAYERS[league] || [];
   },
@@ -31,10 +30,47 @@ export const api = {
     return getAllPlayers();
   },
 
-  // Get news
-  getNews: async () => {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return NEWS;
+  // Get news from backend RSS feed
+  getNews: async (category = null) => {
+    try {
+      const url = category 
+        ? `${API_BASE_URL}/news?category=${category}` 
+        : `${API_BASE_URL}/news`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Erro ao buscar notícias');
+      }
+    } catch (error) {
+      console.error('Erro na API de notícias:', error);
+      // Fallback para dados mockados em caso de erro
+      return NEWS;
+    }
+  },
+
+  // Get available news categories
+  getNewsCategories: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/news/categories`);
+      const data = await response.json();
+      return data.success ? data.data : [];
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      return [
+        { id: 'all', name: 'Todas' },
+        { id: 'cblol', name: 'CBLOL' },
+        { id: 'international', name: 'Internacional' },
+      ];
+    }
   },
 
   // Get recent matches
