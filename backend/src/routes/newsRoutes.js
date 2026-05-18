@@ -1,31 +1,18 @@
 import express from 'express';
-import { fetchAllNews, fetchNewsFromRSS } from '../services/newsService.js';
+import { fetchAllNews } from '../services/newsService.js';
 
 const router = express.Router();
 
-// GET /api/news - Retorna todas as notícias
+// GET /api/news - Retorna todas as notícias ou por categoria
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
     
-    let news;
-    if (category) {
-      // Para categoria específica, buscamos diretamente do feed
-      const RSS_FEEDS = {
-        all: 'https://www.invenglobal.com/lol/rss',
-        cblol: 'https://www.invenglobal.com/lol/cblol/rss',
-        international: 'https://www.invenglobal.com/lol/international/rss',
-        worlds: 'https://www.invenglobal.com/lol/worlds/rss'
-      };
-      
-      if (RSS_FEEDS[category]) {
-        news = await fetchNewsFromRSS(RSS_FEEDS[category], category);
-      } else {
-        news = await fetchAllNews(category);
-      }
-    } else {
-      news = await fetchAllNews();
-    }
+    console.log(`📬 Requisição recebida: /api/news${category ? `?category=${category}` : ''}`);
+    
+    const news = await fetchAllNews(category || 'all');
+    
+    console.log(`📤 Respondendo com ${news.length} notícias`);
     
     res.json({
       success: true,
@@ -34,7 +21,7 @@ router.get('/', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Erro na rota de notícias:', error);
+    console.error('❌ Erro na rota de notícias:', error);
     res.status(500).json({
       success: false,
       error: 'Erro ao buscar notícias',
@@ -51,7 +38,7 @@ router.get('/categories', (req, res) => {
       { id: 'all', name: 'Todas', description: 'Todas as notícias de LoL' },
       { id: 'cblol', name: 'CBLOL', description: 'Notícias do Campeonato Brasileiro' },
       { id: 'international', name: 'Internacional', description: 'Notícias de ligas internacionais' },
-      { id: 'patches', name: 'Patches', description: 'Atualizações e patches do jogo' },
+      { id: 'worlds', name: 'Mundial', description: 'Notícias sobre o Campeonato Mundial' },
     ],
   });
 });
