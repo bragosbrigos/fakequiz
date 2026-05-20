@@ -1,5 +1,6 @@
 require('dotenv').config();
-const pool = require('../config/database');  	
+
+const pool = require('../config/database');
 
 const API_BASE_URL = 'https://api.citoapi.com/api/v1/lol/teams';
 
@@ -7,296 +8,319 @@ const API_BASE_URL = 'https://api.citoapi.com/api/v1/lol/teams';
 function convertToSlug(teamName) {
   return teamName
     .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[^a-z0-9]/g, '');
+    .trim()
+    .replace(/&/g, 'and')
+    .replace(/['.]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
-// Mapeamento especial de nomes de times que não seguem o padrão
+// Caso precise mapear alguns nomes específicos
 const TEAM_NAME_MAPPINGS = {
-  'loud': 'loud',
-  'paiNGaming': 'pain-gaming',
-  'paiN': 'pain-gaming',
-  'KaBuM!': 'kabum',
-  'KaBuM': 'kabum',
-  'kabum': 'kabum',
-  'FURIA': 'furia',
-  'Flamengo': 'flamengo',
-  'REDCanids': 'red-canids',
-  'RED': 'red-canids',
-  'INTZ': 'intz',
-  'Liberty': 'liberty',
-  'VivoKeyd': 'vivo-keyd',
-  'VK': 'vivo-keyd',
-  'MovistarR7': 'movistar-r7',
-  'Isurus': 'isurus',
-  'Leviatan': 'leviatan',
-  'Estral': 'estral',
-  'Rainbow7': 'rainbow7',
-  'AllKnights': 'all-knights',
-  'Infinity': 'infinity',
-  'TeamAze': 'team-aze',
-  'LosGrande': 'los-grande',
-  'Cloud9': 'cloud9',
-  'TeamLiquid': 'team-liquid',
-  'TSM': 'tsm',
-  '100Thieves': '100-thieves',
-  'FlyQuest': 'flyquest',
-  'Dignitas': 'dignitas',
-  'Immortals': 'immortals',
-  'NRG': 'nrg',
-  'GoldenGuardians': 'golden-guardians',
-  'ShopifyRebellion': 'shopify-rebellion',
-  'T1': 't1',
-  'Gen.G': 'gen-g',
-  'DRX': 'drx',
-  'KT Rolster': 'kt-rolster',
-  'HanwhaLifeEsports': 'hanwha-life-esports',
-  'DWGKIA': 'dwg-kia',
-  'DK': 'dwg-kia',
-  'DplusKIA': 'dwg-kia',
-  'KDF': 'kwangdong-freecs',
-  'KwangdongFreecs': 'kwangdong-freecs',
-  'NongshimRedForce': 'nongshim-red-force',
-  'NS': 'nongshim-red-force',
-  'BRO': 'brion',
-  'OKBrion': 'brion',
-  'LiivSANDBOX': 'liiv-sandbox',
-  'LSB': 'liiv-sandbox',
-  'G2 Esports': 'g2-esports',
-  'G2': 'g2-esports',
-  'Fnatic': 'fnatic',
-  'MAD Lions': 'mad-lions',
-  'MAD': 'mad-lions',
-  'Team Vitality': 'team-vitality',
-  'Vitality': 'team-vitality',
-  'SK Gaming': 'sk-gaming',
-  'SK': 'sk-gaming',
-  'Excel Esports': 'excel-esports',
-  'Excel': 'excel-esports',
-  'Rogue': 'rogue',
-  'Astralis': 'astralis',
-  'Team BDS': 'team-bds',
-  'BDS': 'team-bds',
-  'KOI': 'koi',
-  'Giants Gaming': 'giants-gaming',
-  'Giants': 'giants-gaming',
-  'JD Gaming': 'jd-gaming',
-  'JDG': 'jd-gaming',
-  'Bilibili Gaming': 'bilibili-gaming',
-  'BLG': 'bilibili-gaming',
-  'Top Esports': 'top-esports',
-  'TES': 'top-esports',
-  'LNG Esports': 'lng-esports',
-  'LNG': 'lng-esports',
-  'Weibo Gaming': 'weibo-gaming',
-  'WBG': 'weibo-gaming',
-  'Invictus Gaming': 'invictus-gaming',
-  'IG': 'invictus-gaming',
-  'EDward Gaming': 'edward-gaming',
-  'EDG': 'edward-gaming',
-  'FunPlus Phoenix': 'funplus-phoenix',
-  'FPX': 'funplus-phoenix',
-  'Royal Never Give Up': 'royal-never-give-up',
-  'RNG': 'royal-never-give-up'
+  // Exemplo:
+  // 'T1 Esports': 't1',
+  // 'Gen.G Esports': 'geng'
 };
 
 async function getTeamsFromDB() {
-  const query = 'SELECT DISTINCT name, league FROM teams';
+  const query = `
+    SELECT DISTINCT name, league
+    FROM teams
+  `;
+
   const result = await pool.query(query);
   return result.rows;
 }
 
 async function getPlayersFromDB() {
-	const query = 'SELECT id, name, team_name, league FROM players WHERE team_name IS NOT NULL';
+  const query = `
+    SELECT id, name, team_name, league
+    FROM players
+    WHERE team_name IS NOT NULL
+  `;
+
   const result = await pool.query(query);
   return result.rows;
 }
 
 async function fetchTeamRoster(teamSlug) {
   const token = process.env.CITO_API_TOKEN;
+
   if (!token) {
     console.error('❌ CITO_API_TOKEN não configurado no .env');
     throw new Error('API token not configured');
   }
 
-   	  // Debug: mostrar se o token está sendo lido (apenas primeiros caracteres)
-   	  console.log(`  Token configurado: ${token ? 'Sim (inicia com: ' + token.substring(0, 5) + '...)' : 'Não'}`);
+  console.log(
+    `  Token configurado: Sim (${token.substring(0, 5)}...)`
+  );
 
   try {
     const url = `${API_BASE_URL}/${teamSlug}`;
+
     console.log(`  Fetching: ${url}`);
 
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
         'User-Agent': 'LoL-Stats-App/1.0'
       }
     });
 
+    console.log(`  Status HTTP: ${response.status}`);
+
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`    ⚠️ Time "${teamSlug}" não encontrado na API`);
+        console.log(`    ⚠️ Time "${teamSlug}" não encontrado`);
         return null;
       }
+
       if (response.status === 429) {
-        console.log(`    ⚠️ Limite de requisições atingido`);
+        console.log(`    ⚠️ Rate limit atingido`);
         throw new Error('Rate limit exceeded');
       }
-      console.log(`    ⚠️ Erro HTTP ${response.status} para ${teamSlug}`);
+
+      const errorText = await response.text();
+
+      console.log(`    ❌ Erro HTTP ${response.status}`);
+      console.log(errorText);
+
       return null;
     }
 
     const data = await response.json();
+
     return data;
   } catch (error) {
     if (error.message === 'Rate limit exceeded') {
       throw error;
     }
-    console.error(`    ❌ Erro ao buscar ${teamSlug}:`, error.message);
+
+    console.error(
+      `    ❌ Erro ao buscar ${teamSlug}:`,
+      error.message
+    );
+
     return null;
   }
 }
 
 async function updateImagesAndRealNames() {
-  console.log('=== Iniciando atualização de imagens e nomes reais ===\n');
+  console.log('=== Iniciando atualização ===\n');
 
   try {
-    // Buscar todos os times do banco
+    // Buscar times
     const teams = await getTeamsFromDB();
-    console.log(`Encontrados ${teams.length} times no banco de dados\n`);
 
-    // Buscar todos os jogadores do banco
+    console.log(
+      `Encontrados ${teams.length} times no banco\n`
+    );
+
+    // Buscar jogadores
     const players = await getPlayersFromDB();
-    console.log(`Encontrados ${players.length} jogadores no banco de dados\n`);
 
-    // Criar mapa de jogadores por time para facilitar busca
+    console.log(
+      `Encontrados ${players.length} jogadores no banco\n`
+    );
+
+    // Agrupar jogadores por time+liga
     const playersByTeam = new Map();
+
     for (const player of players) {
-      const teamKey = `${player.team_name || ''}-${player.league}`;
-      if (!playersByTeam.has(teamKey)) {
-        playersByTeam.set(teamKey, []);
+      const key = `${player.team_name}-${player.league}`;
+
+      if (!playersByTeam.has(key)) {
+        playersByTeam.set(key, []);
       }
-      playersByTeam.get(teamKey).push(player);
+
+      playersByTeam.get(key).push(player);
     }
 
     let totalUpdated = 0;
     let totalSkipped = 0;
     let apiCallsCount = 0;
-    const MAX_API_CALLS = 200; // Limite diário da API
 
-    // Processar cada time
+    const MAX_API_CALLS = 200;
+
+    // Processar times
     for (const team of teams) {
       if (apiCallsCount >= MAX_API_CALLS) {
-        console.log(`\n⚠️ Limite de ${MAX_API_CALLS} requisições diárias atingido!`);
+        console.log(
+          `\n⚠️ Limite diário de ${MAX_API_CALLS} requisições atingido`
+        );
         break;
       }
 
       const teamName = team.name;
 
-      // Tentar encontrar o slug usando mapeamento ou conversão direta
-      let teamSlug = TEAM_NAME_MAPPINGS[teamName] || convertToSlug(teamName);
+      const teamSlug =
+        TEAM_NAME_MAPPINGS[teamName] ||
+        convertToSlug(teamName);
 
-      console.log(`Processando time: ${teamName} (slug: ${teamSlug})`);
+      console.log(
+        `Processando time: ${teamName} (slug: ${teamSlug})`
+      );
 
-      // Buscar roster na API
+      // Buscar dados na API
       const rosterData = await fetchTeamRoster(teamSlug);
 
-      if (!rosterData || !rosterData.players) {
-        console.log(`  ⚠️ Sem dados de jogadores para ${teamName}\n`);
+      if (!rosterData || !rosterData.roster) {
+        console.log(
+          `  ⚠️ Sem roster para ${teamName}\n`
+        );
         continue;
       }
 
+      // Atualizar logo do time
       const logoUrl = rosterData.logoUrl || null;
 
-      // Atualizar logo do time
       if (logoUrl) {
         const updateTeamQuery = `
           UPDATE teams
-          SET logo_url = $1, updated_at = NOW()
-          WHERE name = $2 AND league = $3
+          SET logo_url = $1,
+              updated_at = NOW()
+          WHERE name = $2
+            AND league = $3
         `;
-        await pool.query(updateTeamQuery, [logoUrl, teamName, team.league]);
-        console.log(`  ✅ Logo atualizada para ${teamName}`);
+
+        await pool.query(updateTeamQuery, [
+          logoUrl,
+          teamName,
+          team.league
+        ]);
+
+        console.log(`  ✅ Logo atualizada`);
       }
 
-      // Processar jogadores do roster
-      const apiPlayers = rosterData.players || [];
-      console.log(`  Jogadores encontrados na API: ${apiPlayers.length}`);
+      // Jogadores da API
+      const apiPlayers = rosterData.roster || [];
 
-      // Obter jogadores deste time no banco
-      const teamPlayers = playersByTeam.get(`${teamName}-${team.league}`) || [];
+      console.log(
+        `  Jogadores encontrados: ${apiPlayers.length}`
+      );
+
+      // Jogadores do banco desse time
+      const teamPlayers =
+        playersByTeam.get(
+          `${teamName}-${team.league}`
+        ) || [];
 
       for (const apiPlayer of apiPlayers) {
-        const apiPlayerName = apiPlayer.playerName;
+        const apiPlayerName =
+          apiPlayer.playerName?.trim();
 
         if (!apiPlayerName) {
           continue;
         }
 
-        // Procurar jogador correspondente no banco
-        const dbPlayer = teamPlayers.find(p => p.name === apiPlayerName);
+        // Buscar jogador correspondente
+        const dbPlayer = teamPlayers.find(
+          p =>
+            p.name?.trim().toLowerCase() ===
+            apiPlayerName.toLowerCase()
+        );
 
-        if (dbPlayer) {
-          // Jogador encontrado no banco - atualizar dados
-          const imageUrl = apiPlayer.imageUrl || null;
-          const realName = apiPlayer.realName || null;
+        if (!dbPlayer) {
+          console.log(
+            `    ⏭️ ${apiPlayerName} não encontrado no banco`
+          );
 
-          const updatePlayerQuery = `
-            UPDATE players
-            SET image_url = COALESCE($1, image_url),
-                real_name = COALESCE($2, real_name),
-                updated_at = NOW()
-            WHERE id = $3
-          `;
-
-          await pool.query(updatePlayerQuery, [imageUrl, realName, dbPlayer.id]);
-
-          if (imageUrl || realName) {
-            console.log(`    ✅ ${apiPlayerName} atualizado (img: ${imageUrl ? 'sim' : 'não'}, real: ${realName ? realName : 'não'})`);
-            totalUpdated++;
-          } else {
-            totalSkipped++;
-          }
-        } else {
-          // Jogador não está no banco - skip
-          console.log(`    ⏭️ ${apiPlayerName} skipado (não está no banco)`);
           totalSkipped++;
+          continue;
         }
+
+        // Dados do jogador
+        const imageUrl =
+          apiPlayer.imageUrl ||
+          apiPlayer.player?.imageUrl ||
+          null;
+
+        const realName =
+          apiPlayer.player?.realName ||
+          null;
+
+        // Atualizar jogador
+        const updatePlayerQuery = `
+          UPDATE players
+          SET image_url = COALESCE($1, image_url),
+              real_name = COALESCE($2, real_name),
+              updated_at = NOW()
+          WHERE id = $3
+        `;
+
+        await pool.query(updatePlayerQuery, [
+          imageUrl,
+          realName,
+          dbPlayer.id
+        ]);
+
+        console.log(
+          `    ✅ ${apiPlayerName} atualizado`
+        );
+
+        console.log(
+          `       Foto: ${imageUrl ? 'Sim' : 'Não'}`
+        );
+
+        console.log(
+          `       Nome real: ${realName || 'Não'}`
+        );
+
+        totalUpdated++;
       }
 
       apiCallsCount++;
-      console.log(`  Requisições usadas: ${apiCallsCount}/${MAX_API_CALLS}\n`);
 
-      // Pequeno delay para evitar rate limit
+      console.log(
+        `  Requisições usadas: ${apiCallsCount}/${MAX_API_CALLS}\n`
+      );
+
+      // Delay para evitar rate limit
       if (apiCallsCount < MAX_API_CALLS) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve =>
+          setTimeout(resolve, 500)
+        );
       }
     }
 
-    console.log('\n=== Resumo ===');
-    console.log(`Jogadores atualizados: ${totalUpdated}`);
-    console.log(`Jogadores skipados: ${totalSkipped}`);
-    console.log(`Requisições à API: ${apiCallsCount}`);
-    console.log('\n=== Atualização concluída ===');
+    console.log('\n=== RESUMO ===');
 
+    console.log(
+      `Jogadores atualizados: ${totalUpdated}`
+    );
+
+    console.log(
+      `Jogadores ignorados: ${totalSkipped}`
+    );
+
+    console.log(
+      `Requisições usadas: ${apiCallsCount}`
+    );
+
+    console.log('\n=== Finalizado ===');
   } catch (error) {
-    console.error('Erro na atualização:', error);
+    console.error('\n❌ Erro geral:', error);
+
     throw error;
   }
 }
 
-// Executar se chamado diretamente
+// Executar diretamente
 if (require.main === module) {
   updateImagesAndRealNames()
     .then(() => {
-      console.log('Script finalizado com sucesso');
+      console.log('\n✅ Script finalizado');
       process.exit(0);
     })
-    .catch((err) => {
-      console.error('Script falhou:', err);
+    .catch(error => {
+      console.error('\n❌ Script falhou:', error);
       process.exit(1);
     });
 }
 
-module.exports = { updateImagesAndRealNames };
+module.exports = {
+  updateImagesAndRealNames
+};
