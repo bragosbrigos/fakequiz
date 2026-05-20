@@ -48,7 +48,7 @@ const createTables = async () => {
       total_deaths INTEGER DEFAULT 0,
       total_assists INTEGER DEFAULT 0,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(champion_name, role)
+      UNIQUE(champion_name, role, league)
     );
   `;
 
