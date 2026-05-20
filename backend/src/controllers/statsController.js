@@ -111,19 +111,34 @@ const getPlayerById = async (req, res) => {
 
 const getChampionStats = async (req, res) => {
   try {
-    const query = 'SELECT * FROM champion_stats ORDER BY games_played DESC';
-    const result = await pool.query(query);
-    
+      const { role, league } = req.query;
+
+      let query = 'SELECT * FROM champion_stats WHERE 1=1';
+      const values = [];
+      let paramCount = 1;
+
+      if (role && role !== 'ALL') {
+        query += ` AND role = $${paramCount}`;
+        values.push(role.toUpperCase());
+        paramCount++;
+      }
+      
+      if (league && league !== 'GLOBAL') {
+        query += ` AND league = $${paramCount}`;
+        values.push(league.toUpperCase());
+        paramCount++;
+      }
+
+      query += ' ORDER BY games_played DESC'; 
     // Transformar dados para incluir cálculos derivados
     const champions = result.rows.map(champ => ({
       id: champ.id.toString(),
       championName: champ.champion_name,
       role: champ.role,
+      league: champ.league || 'UNKNOWN',
       gamesPlayed: champ.games_played || 0,
       wins: champ.wins || 0,
       bans: champ.bans || 0,
-      winRate: calculateWinRate(champ.games_played, champ.wins),
-      kda: calculateKDA(champ.total_kills, champ.total_deaths, champ.total_assists),
       totalKills: champ.total_kills || 0,
       totalDeaths: champ.total_deaths || 0,
       totalAssists: champ.total_assists || 0,
