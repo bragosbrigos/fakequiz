@@ -26,6 +26,17 @@ const TEAMS_LEAGUES = [
   ]}
 ];
 
+const CHAMPIONS_LEAGUES = [
+  { name: 'LCS', url: 'https://oracleselixir.com/stats/champions/byTournament/LCS%2F2026%20Season%2FSpring%20Season' },
+  { name: 'LCK', url: 'https://oracleselixir.com/stats/champions/byTournament/LCK%2F2026%20Season%2FRounds%201-2' },
+  { name: 'LEC', url: 'https://oracleselixir.com/stats/champions/byTournament/LEC%2F2026%20Season%2FSpring%20Season' },
+  { name: 'LPL', url: 'https://oracleselixir.com/stats/champions/byTournament/LPL%2F2026%20Season%2FSplit%202' },
+  { name: 'CBLOL', urls: [
+    'https://oracleselixir.com/stats/champions/byTournament/CBLOL%2F2026%20Season%2FSplit%201',
+    'https://oracleselixir.com/stats/champions/byTournament/CBLOL%2F2026%20Season%2FSplit%201%20Playoffs'
+  ]}
+];
+
 const DOWNLOAD_DIR = path.join(__dirname, '../../downloads');
 
 if (!fs.existsSync(DOWNLOAD_DIR)) {
@@ -236,4 +247,122 @@ async function scrapeTeams() {
   }
 }
 
-module.exports = { scrapePlayers, scrapeTeams };
+async function scrapeChampions() {
+  console.log('Iniciando scrape de campeões...');
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    const allChampions = [];
+
+    for (const league of CHAMPIONS_LEAGUES) {
+      console.log(`Processando liga: ${league.name}`);
+
+      if (league.urls) {
+        let leagueChampions = [];
+        for (let i = 0; i < league.urls.length; i++) {
+          const url = league.urls[i];
+          const filename = `champions_${league.name.toLowerCase()}_${i}.csv`;
+          console.log(`  Baixando URL ${i + 1}/${league.urls.length}: ${url}`);
+
+          const filePath = await downloadCSV(page, url, filename);
+          if (filePath && fs.existsSync(filePath)) {
+            // Verificar se o arquivo CSV tem conteúdo
+            const stats = fs.statSync(filePath);
+            if (stats.size === 0) {
+              console.warn(`⚠️ Arquivo vazio detectado: ${filePath}, tentando novamente...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              const retryPath = await downloadCSV(page, url, filename);
+              if (retryPath && fs.existsSync(retryPath)) {
+                const retryStats = fs.statSync(retryPath);
+                if (retryStats.size === 0) {
+                  console.error(`❌ Arquivo continua vazio após retry: ${retryPath}`);
+                  continue;
+                }
+              } else {
+                console.error(`❌ Falha ao baixar arquivo na segunda tentativa: ${url}`);
+                continue;
+              }
+            }
+            
+            const champions = await parseCSV(filePath);
+            champions.forEach(c => c.league = league.name);
+            leagueChampions = leagueChampions.concat(champions);
+            console.log(`    ${champions.length} campeões extraídos`);
+          } else {
+            console.warn(`⚠️ Nenhum arquivo baixado para: ${url}`);
+          }
+        }
+
+        // Consolidar dados de campeões com mesmo nome e role
+        const champMap = new Map();
+        for (const champ of leagueChampions) {
+          const champName = champ.Champion || champ.champion;
+          const role = (champ.Role || champ.role || 'UNKNOWN').toUpperCase();
+          const key = `${champName}-${role}`;
+          
+          if (champMap.has(key)) {
+            const existingChamp = champMap.get(key);
+            existingChamp.games_played = (parseInt(existingChamp.games_played) || 0) + (parseInt(champ.games_played) || 0);
+            existingChamp.wins = (parseInt(existingChamp.wins) || 0) + (parseInt(champ.wins) || 0);
+            existingChamp.bans = (parseInt(existingChamp.bans) || 0) + (parseInt(champ.bans) || 0);
+            existingChamp.kills = (parseInt(existingChamp.kills) || 0) + (parseInt(champ.kills) || 0);
+            existingChamp.deaths = (parseInt(existingChamp.deaths) || 0) + (parseInt(champ.deaths) || 0);
+            existingChamp.assists = (parseInt(existingChamp.assists) || 0) + (parseInt(champ.assists) || 0);
+          } else {
+            champMap.set(key, { ...champ });
+          }
+        }
+        const consolidatedChampions = Array.from(champMap.values());
+        console.log(`  Total consolidado para ${league.name}: ${consolidatedChampions.length} campeões`);
+        allChampions.push(...consolidatedChampions);
+      } else {
+        const filename = `champions_${league.name.toLowerCase()}.csv`;
+        console.log(`  Baixando: ${league.url}`);
+
+        const filePath = await downloadCSV(page, league.url, filename);
+        if (filePath && fs.existsSync(filePath)) {
+          // Verificar se o arquivo CSV tem conteúdo
+          const stats = fs.statSync(filePath);
+          if (stats.size === 0) {
+            console.warn(`⚠️ Arquivo vazio detectado: ${filePath}, tentando novamente...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const retryPath = await downloadCSV(page, league.url, filename);
+            if (retryPath && fs.existsSync(retryPath)) {
+              const retryStats = fs.statSync(retryPath);
+              if (retryStats.size === 0) {
+                console.error(`❌ Arquivo continua vazio após retry: ${retryPath}`);
+                continue;
+              }
+            } else {
+              console.error(`❌ Falha ao baixar arquivo na segunda tentativa: ${league.url}`);
+              continue;
+            }
+          }
+          
+          const champions = await parseCSV(filePath);
+          champions.forEach(c => c.league = league.name);
+          allChampions.push(...champions);
+          console.log(`    ${champions.length} campeões extraídos`);
+        } else {
+          console.warn(`⚠️ Nenhum arquivo baixado para: ${league.url}`);
+        }
+      }
+    }
+
+    console.log(`Total de campeões extraídos: ${allChampions.length}`);
+    return allChampions;
+  } catch (error) {
+    console.error('Erro no scrape de campeões:', error);
+    throw error;
+  } finally {
+    await browser.close();
+  }
+}
+
+module.exports = { scrapePlayers, scrapeTeams, scrapeChampions };

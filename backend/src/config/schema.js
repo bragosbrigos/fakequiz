@@ -41,12 +41,14 @@ const createTables = async () => {
       id SERIAL PRIMARY KEY,
       champion_name VARCHAR(100) NOT NULL,
       role VARCHAR(20) NOT NULL,
+      league VARCHAR(50) NOT NULL,
       games_played INTEGER DEFAULT 0,
       wins INTEGER DEFAULT 0,
       bans INTEGER DEFAULT 0,
       total_kills INTEGER DEFAULT 0,
       total_deaths INTEGER DEFAULT 0,
       total_assists INTEGER DEFAULT 0,
+      icon_url VARCHAR(500),
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(champion_name, role, league)
     );

@@ -129,19 +129,28 @@ const getChampionStats = async (req, res) => {
         paramCount++;
       }
 
-      query += ' ORDER BY games_played DESC'; 
+      query += ' ORDER BY games_played DESC';
+      
+      const result = await pool.query(query, values);
+    
     // Transformar dados para incluir cálculos derivados
     const champions = result.rows.map(champ => ({
       id: champ.id.toString(),
       championName: champ.champion_name,
+      champion_name: champ.champion_name,
       role: champ.role,
-      league: champ.league || 'UNKNOWN',
+      league: champ.league || 'GLOBAL',
       gamesPlayed: champ.games_played || 0,
+      games_played: champ.games_played || 0,
       wins: champ.wins || 0,
       bans: champ.bans || 0,
       totalKills: champ.total_kills || 0,
+      total_kills: champ.total_kills || 0,
       totalDeaths: champ.total_deaths || 0,
+      total_deaths: champ.total_deaths || 0,
       totalAssists: champ.total_assists || 0,
+      total_assists: champ.total_assists || 0,
+      icon_url: champ.icon_url || null,
     }));
     
     res.json(champions);

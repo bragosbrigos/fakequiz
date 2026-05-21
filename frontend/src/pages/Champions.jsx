@@ -116,6 +116,18 @@ const Champions = () => {
     return ((bans / total) * 100).toFixed(1);
   };
 
+  const getChampionIcon = (championName) => {
+    if (!championName) return null;
+    // Formatar nome do campeão para URL (remove espaços, acentos, etc.)
+    const formattedName = championName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .replace(/([a-z])([A-Z])/g, '$1_$2')
+      .toUpperCase();
+    return `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${formattedName}.png`;
+  };
+
   if (loading) return <div className="loading">Carregando campeões...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -217,7 +229,20 @@ const Champions = () => {
             ) : (
               filteredChampions.map((champ, index) => (
                 <tr key={`${champ.champion_name}-${champ.role}-${index}`}>
-                  <td className="champion-name">{champ.champion_name}</td>
+                  <td className="champion-name">
+                    <div className="champion-cell">
+                      <img 
+                        src={getChampionIcon(champ.champion_name)} 
+                        alt={champ.champion_name}
+                        className="champion-icon"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Aatrox.png';
+                        }}
+                      />
+                      <span>{champ.champion_name}</span>
+                    </div>
+                  </td>
                   <td className="role-badge">{champ.role}</td>
                   <td>{champ.games_played}</td>
                   <td>{champ.wins}</td>

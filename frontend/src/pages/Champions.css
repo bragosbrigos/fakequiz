@@ -113,6 +113,21 @@
   font-size: 1rem;
 }
 
+.champion-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.champion-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e7ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .role-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;

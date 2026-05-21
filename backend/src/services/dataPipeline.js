@@ -1,47 +1,36 @@
 const pool = require('../config/database');
-const { scrapePlayers, scrapeTeams } = require('./scrapingService');
+const { scrapePlayers, scrapeTeams, scrapeChampions } = require('./scrapingService');
 
 // Função para salvar estatísticas de campeões no banco de dados
-// Será implementada quando os links dos campeões forem fornecidos
 async function saveChampionStatsToDB(champions) {
   console.log(`Salvando ${champions.length} registros de campeões no banco...`);
   
   for (const champ of champions) {
-    // LINK_DO_CAMPION_AQUI - Esta função será implementada quando você enviar os links
-    // A estrutura esperada dos dados:
-    // {
-    //   champion_name: 'Nome do Campeão',
-    //   role: 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT',
-    //   games_played: número,
-    //   wins: número,
-    //   bans: número,
-    //   kills: número,
-    //   deaths: número,
-    //   assists: número
-    // }
-    
     const query = `
-      INSERT INTO champion_stats (champion_name, role, games_played, wins, bans, total_kills, total_deaths, total_assists, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-      ON CONFLICT (champion_name, role) DO UPDATE SET
+      INSERT INTO champion_stats (champion_name, role, league, games_played, wins, bans, total_kills, total_deaths, total_assists, icon_url, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+      ON CONFLICT (champion_name, role, league) DO UPDATE SET
         games_played = EXCLUDED.games_played,
         wins = EXCLUDED.wins,
         bans = EXCLUDED.bans,
         total_kills = EXCLUDED.total_kills,
         total_deaths = EXCLUDED.total_deaths,
         total_assists = EXCLUDED.total_assists,
+        icon_url = EXCLUDED.icon_url,
         updated_at = NOW()
     `;
     
     const values = [
       champ.champion_name,
       champ.role,
+      champ.league || 'GLOBAL',
       champ.games_played || 0,
       champ.wins || 0,
       champ.bans || 0,
       champ.kills || 0,
       champ.deaths || 0,
-      champ.assists || 0
+      champ.assists || 0,
+      champ.icon_url || null
     ];
     
     await pool.query(query, values);
@@ -191,10 +180,10 @@ async function runExtraction() {
     const teams = await scrapeTeams();
     await saveTeamsToDB(teams);
     
+    const champions = await scrapeChampions();
+    await saveChampionStatsToDB(champions);
+    
     console.log('=== Pipeline Concluída com Sucesso ===');
-    // LINK_DO_CAMPION_AQUI - Chamada para extrair dados de campeões será adicionada aqui
-    // const champions = await scrapeChampions();
-    // await saveChampionStatsToDB(champions);
   } catch (error) {
     console.error('Erro na pipeline de extração:', error);
     throw error;
