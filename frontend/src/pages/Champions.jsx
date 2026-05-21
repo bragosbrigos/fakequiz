@@ -116,7 +116,8 @@ const Champions = () => {
     return ((bans / total) * 100).toFixed(1);
   };
 
-  const getChampionIcon = (championName) => {
+  const getChampionIcon = (championName, iconUrl) => {
+    if (iconUrl) return iconUrl;
     if (!championName) return null;
     // Formatar nome do campeão para URL (remove espaços, acentos, etc.)
     const formattedName = championName
@@ -232,7 +233,7 @@ const Champions = () => {
                   <td className="champion-name">
                     <div className="champion-cell">
                       <img 
-                        src={getChampionIcon(champ.champion_name)} 
+                        src={getChampionIcon(champ.champion_name, champ.icon_url)} 
                         alt={champ.champion_name}
                         className="champion-icon"
                         onError={(e) => {

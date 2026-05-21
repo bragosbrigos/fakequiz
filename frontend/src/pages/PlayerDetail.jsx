@@ -60,9 +60,17 @@ export function PlayerDetail() {
               </svg>
             </button>
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 border-2 border-gold-600/40 flex items-center justify-center text-3xl">
-                {player.teamLogo}
-              </div>
+              {player.image_url ? (
+                <img 
+                  src={player.image_url} 
+                  alt={player.name}
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-gold-600/40"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 border-2 border-gold-600/40 flex items-center justify-center text-3xl">
+                  {player.teamLogo}
+                </div>
+              )}
               <div>
                 <h2 className="font-display font-bold text-2xl text-white">{player.name}</h2>
                 <p className="text-gold-400 font-medium">{player.team}</p>

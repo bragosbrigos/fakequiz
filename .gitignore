@@ -1,50 +1,61 @@
-```
 # Dependencies
 node_modules/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-.ENV
-.ENV.local
 
 # Build artifacts
 dist/
 build/
-target/
+*.js.map
 
-# Logs
-*.log
-
-# Environment variables
+# Environment
 .env
 .env.local
 *.env.*
 
-# IDE
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
 
-# OS
+# Python (if any Python files exist in project)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Coverage
-.coverage
+# Coverage reports
 coverage/
 htmlcov/
+.coverage
 
-# Cache
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.a
+*.o
+*.class
+*.out
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# IDE specific
+.gradle/
+target/
 .mypy_cache/
 .pytest_cache/
-.gradle/
-```

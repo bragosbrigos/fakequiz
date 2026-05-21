@@ -9,9 +9,17 @@ export function PlayerCard({ player }) {
       className="bg-dark-100 border border-gray-700/30 rounded-2xl p-5 card-hover cursor-pointer block"
     >
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 border border-gold-600/30 flex items-center justify-center text-xl">
-          {player.teamLogo}
-        </div>
+        {player.image_url ? (
+          <img 
+            src={player.image_url} 
+            alt={player.name}
+            className="w-12 h-12 rounded-xl object-cover border border-gold-600/30"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 border border-gold-600/30 flex items-center justify-center text-xl">
+            {player.teamLogo}
+          </div>
+        )}
         <div>
           <div className="font-bold text-white">{player.name}</div>
           <div className="text-xs text-gray-500">{player.team} • {player.league}</div>
