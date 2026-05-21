@@ -12,6 +12,7 @@ export function Navbar() {
   const navLinks = [
     { path: '/', label: 'Rankings' },
     { path: '/players', label: 'Jogadores' },
+    { path: '/teams', label: 'Times' },
     { path: '/champions', label: 'Campeões' },
     { path: '/compare', label: 'Comparar' },
   ];

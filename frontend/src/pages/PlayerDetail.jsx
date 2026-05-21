@@ -44,6 +44,10 @@ export function PlayerDetail() {
 
   if (!player) return null;
 
+  // Calcular wins e losses baseado no winrate e games
+  const wins = Math.round((player.wr / 100) * player.games);
+  const losses = player.games - wins;
+  
   const wrColor = player.wr >= 60 ? 'text-green-400' : player.wr >= 50 ? 'text-yellow-400' : 'text-red-400';
 
   // Preparar dados para o gráfico de radar
@@ -62,44 +66,51 @@ export function PlayerDetail() {
           <div className="relative p-6 pb-4 border-b border-gray-700/30">
             <button
               onClick={() => navigate(-1)}
-              className="absolute top-4 right-4 p-2 rounded-lg bg-dark-200 hover:bg-dark-300 text-gray-400 hover:text-white transition-all"
+              className="absolute top-4 right-4 p-2 rounded-lg bg-dark-200 hover:bg-dark-300 text-gray-400 hover:text-white transition-all z-10"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <div className="flex items-center gap-5">
-              {player.image_url ? (
-                <img
-                  src={player.image_url}
-                  alt={player.name}
-                  className="w-24 h-24 rounded-2xl object-cover border-2 border-gold-600/40 shadow-lg shadow-gold-600/10"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 border-2 border-gold-600/40 flex items-center justify-center text-4xl">
-                  {player.teamLogo}
-                </div>
-              )}
-              <div>
-                <h2 className="font-display font-bold text-3xl text-white">{player.name}</h2>
-                {player.real_name && (
-                  <p className="text-sm text-gray-400 mt-1">{player.real_name}</p>
+            
+            {/* Player Image - Left Side, Larger */}
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              <div className="flex-shrink-0">
+                {player.image_url ? (
+                  <img
+                    src={player.image_url}
+                    alt={player.name}
+                    className="w-64 h-64 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="w-64 h-64 rounded-2xl bg-gradient-to-br from-gold-400/20 to-gold-600/20 flex items-center justify-center text-4xl">
+                    {player.teamLogo}
+                  </div>
                 )}
-                <div className="flex items-center gap-2 mt-2">
-                  {player.team_logo_url && (
-                    <img
-                      src={player.team_logo_url}
-                      alt={player.team}
-                      className="w-5 h-5 object-contain"
-                      onError={(e) => e.target.style.display = 'none'}
-                    />
+              </div>
+
+              <div className="flex-1 pt-2">
+                <div>
+                  <h2 className="font-display font-bold text-3xl text-white">{player.name}</h2>
+                  {player.real_name && (
+                    <p className="text-sm text-gray-400 mt-1">{player.real_name}</p>
                   )}
-                  <p className="text-gold-400 font-medium">{player.team}</p>
-                </div>
-                <div className="flex gap-3 mt-3">
-                  <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.league}</span>
-                  <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.region}</span>
-                  <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.role}</span>
+                  <div className="flex items-center gap-2 mt-2">
+                    {player.team_logo_url && (
+                      <img
+                        src={player.team_logo_url}
+                        alt={player.team}
+                        className="w-5 h-5 object-contain"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                    <p className="text-gold-400 font-medium">{player.team}</p>
+                  </div>
+                  <div className="flex gap-3 mt-3">
+                    <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.league}</span>
+                    <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.region}</span>
+                    <span className="px-2 py-1 bg-dark-200 rounded-md text-xs text-gray-400">{player.role}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -132,6 +143,18 @@ export function PlayerDetail() {
                 <div className="text-center">
                   <div className="text-2xl font-display font-bold text-white">{player.games}</div>
                   <div className="text-xs text-gray-500 mt-1 uppercase">Partidas Jogadas</div>
+                </div>
+              </div>
+
+              {/* Wins e Losses */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-display font-bold text-green-400">{wins}</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">Vitórias</div>
+                </div>
+                <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-display font-bold text-red-400">{losses}</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">Derrotas</div>
                 </div>
               </div>
             </div>

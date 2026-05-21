@@ -1,21 +1,23 @@
+```
 # Dependencies
 node_modules/
+
+# Environment
+.env
+.env.local
+.env.*
 
 # Build artifacts
 dist/
 build/
 *.js.map
-
-# Environment
-.env
-.env.local
-*.env.*
+*.jsx.map
 
 # Editors
 .vscode/
 .idea/
 
-# Python (if any Python files exist in project)
+# Python related (if any Python files exist in project)
 __pycache__/
 *.pyc
 *.pyo
@@ -28,34 +30,25 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Temporary files
-*.tmp
+# IDE specific
 *.swp
 *.swo
+*.tmp
 
-# Compiled binaries
-*.exe
-*.dll
-*.so
-*.a
-*.o
-*.class
-*.out
-*.jar
-*.war
-*.zip
+# Package manager
+package-lock.json
+yarn.lock
+
+# Testing
+.nyc_output/
+coverage/
+
+# Distribution / packaging
 *.tar.gz
-*.tgz
-*.rar
-*.7z
-
-# IDE specific
-.gradle/
-target/
-.mypy_cache/
-.pytest_cache/
+*.egg-info/
+```
