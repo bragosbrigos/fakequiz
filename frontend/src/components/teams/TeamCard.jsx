@@ -5,13 +5,17 @@ export function TeamCard({ team, league }) {
   
   return (
     <Link
-      to={`/team/${team.id}/${league}`}
+      to={`/team/${team.id}`}
       className="bg-dark-100 border border-gray-700/30 rounded-2xl p-6 hover:bg-dark-200/50 hover:border-gold-600/30 transition-all cursor-pointer block group"
     >
       <div className="flex flex-col items-center text-center">
         {/* Logo do Time - Maior e sem borda */}
         <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-gold-400/10 to-gold-600/10 flex items-center justify-center text-5xl mb-4 group-hover:scale-105 transition-transform">
-          {team.logo}
+          {team.logo_url ? (
+            <img src={team.logo_url} alt={team.name} className="w-full h-full object-contain p-2" />
+          ) : (
+            <span className="text-4xl">🎮</span>
+          )}
         </div>
         
         {/* Nome do Time - Destacado */}
@@ -32,10 +36,21 @@ export function TeamCard({ team, league }) {
           </div>
           <div className="flex justify-between items-center text-sm mt-2">
             <span className="text-gray-500">Região</span>
-            <span className="text-white font-semibold">{team.region}</span>
+            <span className="text-white font-semibold">{team.region || getRegionFromLeague(league)}</span>
           </div>
         </div>
       </div>
     </Link>
   );
+}
+
+function getRegionFromLeague(league) {
+  const regions = {
+    'CBLOL': 'BR',
+    'LCK': 'KR',
+    'LEC': 'EU',
+    'LCS': 'NA',
+    'LPL': 'CN',
+  };
+  return regions[league] || 'Unknown';
 }

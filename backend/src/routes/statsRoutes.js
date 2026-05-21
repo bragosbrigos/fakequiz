@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getTeams, getPlayers, getPlayerById, getChampionStats } = require('../controllers/statsController');
+const { getTeams, getTeamById, getPlayers, getPlayerById, getChampionStats } = require('../controllers/statsController');
 
 router.get('/teams', getTeams);
 router.get('/teams/:league', getTeams);
+router.get('/team/:id', getTeamById);
 
 router.get('/players', getPlayers);
 router.get('/players/:league', getPlayers);

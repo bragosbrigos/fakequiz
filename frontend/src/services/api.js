@@ -34,6 +34,33 @@ export const api = {
     return allPlayers.sort((a, b) => b.kda - a.kda).slice(0, count);
   },
 
+  // Get all teams
+  getTeams: async () => {
+    const response = await fetch(`${API_BASE_URL}/teams`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch teams');
+    }
+    return await response.json();
+  },
+
+  // Get teams by league
+  getTeamsByLeague: async (league) => {
+    const response = await fetch(`${API_BASE_URL}/teams/${league}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch teams by league');
+    }
+    return await response.json();
+  },
+
+  // Get team by ID with players
+  getTeamById: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/team/${id}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch team');
+    }
+    return await response.json();
+  },
+
   // Get champion statistics (will be populated when champion links are provided)
   getChampionStats: async () => {
     const response = await fetch(`${API_BASE_URL}/champions`);

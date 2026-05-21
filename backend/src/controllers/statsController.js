@@ -23,6 +23,74 @@ const getTeams = async (req, res) => {
   }
 };
 
+const getTeamById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar informações do time
+    const teamQuery = 'SELECT * FROM teams WHERE id = $1';
+    const teamResult = await pool.query(teamQuery, [id]);
+    
+    if (teamResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Time não encontrado' });
+    }
+    
+    const team = teamResult.rows[0];
+    
+    // Buscar jogadores do time
+    const playersQuery = `
+      SELECT * FROM players 
+      WHERE team_name = $1 
+      ORDER BY 
+        CASE position 
+          WHEN 'TOP' THEN 1 
+          WHEN 'JUNGLE' THEN 2 
+          WHEN 'MID' THEN 3 
+          WHEN 'ADC' THEN 4 
+          WHEN 'SUPPORT' THEN 5 
+          ELSE 6 
+        END
+    `;
+    const playersResult = await pool.query(playersQuery, [team.name]);
+    
+    // Transformar dados dos jogadores
+    const players = playersResult.rows.map(player => ({
+      id: player.id.toString(),
+      name: player.name,
+      team: player.team_name || 'Unknown',
+      teamLogo: player.logo_url || null,
+      image_url: player.image_url || null,
+      league: player.league,
+      role: player.position || 'Unknown',
+      region: getRegionFromLeague(player.league),
+      kda: parseFloat(player.kda) || 0,
+      csPerMin: parseFloat(player.cspm) || 0,
+      kp: parseFloat(player.kill_participation) || 0,
+      wr: calculateWinRate(player.games_played, player.wins),
+      games: player.games_played || 0,
+      damage: Math.floor(parseFloat(player.dpm) * 20) || 0,
+      gold: Math.floor(parseFloat(player.gold_per_10) * 100) || 0,
+    }));
+    
+    const teamData = {
+      id: team.id.toString(),
+      name: team.name,
+      league: team.league,
+      logo_url: team.logo_url || null,
+      games: team.games_played || 0,
+      wins: team.wins || 0,
+      losses: team.losses || 0,
+      region: getRegionFromLeague(team.league),
+      players: players,
+    };
+    
+    res.json(teamData);
+  } catch (error) {
+    console.error('Erro ao buscar time:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
 const getPlayers = async (req, res) => {
   try {
     const { league } = req.params;
