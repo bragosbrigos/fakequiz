@@ -17,23 +17,26 @@ webPush.setVapidDetails(
 );
 
 /**
- * Salvar ou atualizar uma subscrição de push
+ * Salvar ou atualizar uma subscrição de push com preferências do usuário
  */
-const saveSubscription = async (subscription) => {
+const saveSubscription = async (subscription, userPreferences = {}) => {
   const { endpoint, keys } = subscription;
-  
+  const { favoriteTeams = [], favoriteLeagues = [] } = userPreferences;
+
   const query = `
-    INSERT INTO push_subscriptions (endpoint, p256dh, auth, updated_at)
-    VALUES ($1, $2, $3, NOW())
+    INSERT INTO push_subscriptions (endpoint, p256dh, auth, favorite_teams, favorite_leagues, updated_at)
+    VALUES ($1, $2, $3, $4, $5, NOW())
     ON CONFLICT (endpoint) DO UPDATE SET
       p256dh = EXCLUDED.p256dh,
       auth = EXCLUDED.auth,
+      favorite_teams = COALESCE(EXCLUDED.favorite_teams, favorite_teams),
+      favorite_leagues = COALESCE(EXCLUDED.favorite_leagues, favorite_leagues),
       updated_at = NOW()
     RETURNING id;
   `;
-  
-  const values = [endpoint, keys.p256dh, keys.auth];
-  
+
+  const values = [endpoint, keys.p256dh, keys.auth, favoriteTeams, favoriteLeagues];
+
   try {
     const result = await pool.query(query, values);
     console.log('Subscrição salva/atualizada:', result.rows[0]?.id);
@@ -93,7 +96,7 @@ const removeSubscription = async (endpoint) => {
  */
 const getAllSubscriptions = async () => {
   const query = `
-    SELECT id, endpoint, p256dh, auth, expiration_time
+    SELECT id, endpoint, p256dh, auth, expiration_time, favorite_teams, favorite_leagues
     FROM push_subscriptions
     WHERE expiration_time IS NULL OR expiration_time > NOW()
   `;
@@ -109,6 +112,7 @@ const getAllSubscriptions = async () => {
 
 /**
  * Buscar partidas que começam em X minutos e enviar notificações
+ * Filtra por preferências de times e ligas dos usuários
  */
 const checkAndSendMatchNotifications = async (minutesBefore = 15) => {
   try {
@@ -143,7 +147,7 @@ const checkAndSendMatchNotifications = async (minutesBefore = 15) => {
     
     console.log(`${matches.length} partida(s) encontrada(s) para notificar.`);
     
-    // Buscar todas as subscrições ativas
+    // Buscar todas as subscrições ativas com preferências
     const subscriptions = await getAllSubscriptions();
     
     if (subscriptions.length === 0) {
@@ -153,7 +157,7 @@ const checkAndSendMatchNotifications = async (minutesBefore = 15) => {
     
     let sentCount = 0;
     
-    // Para cada partida, criar notificação e enviar para todos os usuários
+    // Para cada partida, encontrar usuários interessados e enviar notificações
     for (const match of matches) {
       const payload = {
         title: `Partida começando em ${minutesBefore} min!`,
@@ -189,8 +193,36 @@ const checkAndSendMatchNotifications = async (minutesBefore = 15) => {
       
       const notificationId = notificationResult.rows[0].id;
       
-      // Enviar para todas as subscrições
-      for (const subscription of subscriptions) {
+      // Filtrar usuários interessados nesta partida
+      const interestedSubscriptions = subscriptions.filter(sub => {
+        const favoriteTeams = sub.favorite_teams || [];
+        const favoriteLeagues = sub.favorite_leagues || [];
+        
+        // Se não tiver preferências, recebe todas as notificações
+        if (favoriteTeams.length === 0 && favoriteLeagues.length === 0) {
+          return true;
+        }
+
+        // Verificar se algum time favorito está jogando
+        const hasFavoriteTeam = favoriteTeams.some(team => 
+          team.toLowerCase() === (match.team1_name || '').toLowerCase() ||
+          team.toLowerCase() === (match.team2_name || '').toLowerCase() ||
+          team.toLowerCase() === (match.team1_acronym || '').toLowerCase() ||
+          team.toLowerCase() === (match.team2_acronym || '').toLowerCase()
+        );
+
+        // Verificar se a liga é favorita
+        const hasFavoriteLeague = favoriteLeagues.some(league =>
+          league.toLowerCase() === (match.league_name || '').toLowerCase()
+        );
+
+        return hasFavoriteTeam || hasFavoriteLeague;
+      });
+      
+      console.log(`${interestedSubscriptions.length} usuário(s) interessado(s) na partida: ${match.team1_name} vs ${match.team2_name}`);
+      
+      // Enviar apenas para usuários interessados
+      for (const subscription of interestedSubscriptions) {
         const result = await sendPushNotification(subscription, payload);
         
         if (result.success) {
@@ -204,7 +236,7 @@ const checkAndSendMatchNotifications = async (minutesBefore = 15) => {
         ['sent', notificationId]
       );
       
-      console.log(`Notificação enviada para partida: ${match.team1_name} vs ${match.team2_name}`);
+      console.log(`Notificações enviadas para partida: ${match.team1_name} vs ${match.team2_name}`);
     }
     
     console.log(`Total de notificações enviadas: ${sentCount}`);

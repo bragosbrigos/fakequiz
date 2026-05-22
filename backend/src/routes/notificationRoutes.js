@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { saveSubscription, checkAndSendMatchNotifications, getVapidPublicKey } = require('../services/notificationService');
 
+// Token de autenticação para o endpoint de check-matches (usado pelo GitHub Actions)
+const NOTIFICATION_API_TOKEN = process.env.NOTIFICATION_API_TOKEN;
+
 /**
  * GET /api/notifications/vapid-public-key
  * Retorna a chave pública VAPID para o frontend configurar o push
@@ -20,11 +23,12 @@ router.get('/notifications/vapid-public-key', (req, res) => {
 
 /**
  * POST /api/notifications/subscribe
- * Salva uma nova subscrição de push notification
+ * Salva uma nova subscrição de push notification com preferências opcionais
  */
 router.post('/notifications/subscribe', async (req, res) => {
   try {
-    const subscription = req.body;
+    const subscription = req.body.subscription || req.body;
+    const userPreferences = req.body.preferences || {};
     
     if (!subscription || !subscription.endpoint) {
       return res.status(400).json({ 
@@ -33,8 +37,9 @@ router.post('/notifications/subscribe', async (req, res) => {
     }
     
     console.log('Recebendo subscrição:', subscription.endpoint);
+    console.log('Preferências do usuário:', userPreferences);
     
-    const result = await saveSubscription(subscription);
+    const result = await saveSubscription(subscription, userPreferences);
     
     res.json({ 
       success: true, 
@@ -54,10 +59,23 @@ router.post('/notifications/subscribe', async (req, res) => {
  * POST /api/notifications/check-matches
  * Endpoint manual para verificar e enviar notificações de partidas
  * (Será chamado pelo GitHub Actions cron)
+ * Protegido por token de autenticação
  */
 router.post('/notifications/check-matches', async (req, res) => {
   try {
-    // Opcional: adicionar autenticação/token para proteger este endpoint
+    // Verificar autenticação via token
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : null;
+    
+    if (!token || token !== NOTIFICATION_API_TOKEN) {
+      console.warn('Tentativa de acesso não autorizado ao endpoint check-matches');
+      return res.status(401).json({ 
+        error: 'Não autorizado. Token de autenticação necessário.' 
+      });
+    }
+    
     const minutesBefore = parseInt(req.query.minutes) || 15;
     
     console.log(`[API] Iniciando verificação de partidas (${minutesBefore} min)...`);

@@ -104,6 +104,8 @@ const createTables = async () => {
       endpoint VARCHAR(500) NOT NULL UNIQUE,
       p256dh VARCHAR(255) NOT NULL,
       auth VARCHAR(255) NOT NULL,
+      favorite_teams TEXT[] DEFAULT '{}',
+      favorite_leagues TEXT[] DEFAULT '{}',
       expiration_time TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
