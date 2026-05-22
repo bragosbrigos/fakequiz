@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 
 const LEAGUES = {
+  ALL: { flag: '🌍', name: 'Todas as Ligas' },
   CBLOL: { flag: '🇧🇷', name: 'CBLOL' },
   LCK: { flag: '🇰🇷', name: 'LCK' },
   LEC: { flag: '🇪🇺', name: 'LEC' },
@@ -32,13 +33,22 @@ export function LeagueTabs({ currentLeague, onLeagueChange }) {
 export function RankingsTable({ league }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
 
   useEffect(() => {
     const loadRankings = async () => {
       setLoading(true);
       try {
-        const data = await api.getRankings(league);
-        setPlayers(data);
+        // Se league for 'ALL', busca todos os jogadores sem filtro de liga
+        const data = league === 'ALL' 
+          ? await api.getRankingsAll()
+          : await api.getRankings(league);
+        // Limita aos 10 melhores
+        setPlayers(data.slice(0, 10));
+        
+        // Buscar última atualização
+        const updateData = await api.getLastUpdateTime();
+        setLastUpdate(updateData.formatted);
       } catch (error) {
         console.error('Error loading rankings:', error);
       } finally {
@@ -60,9 +70,9 @@ export function RankingsTable({ league }) {
     <div className="bg-dark-100 border border-gray-700/30 rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-700/30 flex items-center justify-between">
         <h2 className="font-display font-bold text-lg text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
-          {LEAGUES[league].flag} {league} — Rankings 2026
+          {league === 'ALL' ? '🌍 Global' : `${LEAGUES[league]?.flag || '🌍'} ${league === 'ALL' ? 'Todas as Ligas' : league}`} — Rankings 2026
         </h2>
-        <span className="text-xs text-gray-500">Atualizado: há 12 min</span>
+        <span className="text-xs text-gray-500">Atualizado: {lastUpdate || 'há alguns minutos'}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">

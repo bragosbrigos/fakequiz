@@ -1,19 +1,41 @@
 ```
 # Dependencies
 node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+target/
+.gradle/
 
-# Environment variables
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
+# Editors
+.vscode/
+.idea/
+*.pyc
+*.class
+*.o
+*.obj
+*.out
+.DS_Store
+Thumbs.db
 
-# Build outputs
-dist/
-build/
-target/
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
 # Python specific
 __pycache__/
@@ -21,10 +43,12 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-env/
-venv/
+*.so
+*.egg
+.eggs/
 .venv/
-.venv.bak/
+venv/
+ENV/
 pip-log.txt
 pip-delete-this-directory.txt
 .tox/
@@ -35,29 +59,44 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git/modules/
-.DS_Store
-Thumbs.db
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
 
-# Editor specific
-.vscode/
-.idea/
+# Node.js specific
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+dist/
+build/
+.nyc_output
+coverage/
+*.lcov
+.nyc_output/
+coverage/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+target/
+out/
+bin/
+obj/
+lib/
+_deps/
+cmake-build-*/
+*.iws
 *.swp
 *.swo
-
-# Testing
-coverage/
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-
-# OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-Thumbs.db:encryptable
 ```

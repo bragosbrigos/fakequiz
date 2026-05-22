@@ -1,11 +1,38 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const api = {
-  // Get rankings by league
+  // Get rankings by league (limit to top 10)
   getRankings: async (league) => {
     const response = await fetch(`${API_BASE_URL}/players/${league}`);
     if (!response.ok) {
       throw new Error('Failed to fetch rankings');
+    }
+    return await response.json();
+  },
+
+  // Get all rankings (no league filter)
+  getRankingsAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/players`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch all rankings');
+    }
+    return await response.json();
+  },
+
+  // Get total players count
+  getTotalPlayersCount: async () => {
+    const response = await fetch(`${API_BASE_URL}/stats/total-players`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch total players count');
+    }
+    return await response.json();
+  },
+
+  // Get last update time
+  getLastUpdateTime: async () => {
+    const response = await fetch(`${API_BASE_URL}/stats/last-update`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch last update time');
     }
     return await response.json();
   },

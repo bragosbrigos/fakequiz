@@ -230,9 +230,62 @@ const getChampionStats = async (req, res) => {
   }
 };
 
-module.exports = { getTeams, getTeamById, getPlayers, getPlayerById, getChampionStats };
+const getTotalPlayersCount = async (req, res) => {
+  try {
+    const query = 'SELECT COUNT(*) as total FROM players';
+    const result = await pool.query(query);
+    const count = parseInt(result.rows[0].total) || 0;
+    res.json({ total: count });
+  } catch (error) {
+    console.error('Erro ao contar jogadores:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+const getLastUpdateTime = async (req, res) => {
+  try {
+    // Buscar o horário da última atualização de partidas ou jogadores
+    const query = `
+      SELECT 
+        MAX(updated_at) as last_update 
+      FROM (
+        SELECT updated_at FROM matches WHERE updated_at IS NOT NULL
+        UNION ALL
+        SELECT updated_at FROM players WHERE updated_at IS NOT NULL
+      ) as all_updates
+    `;
+    const result = await pool.query(query);
+    const lastUpdate = result.rows[0]?.last_update;
+    
+    res.json({ 
+      lastUpdate: lastUpdate || new Date().toISOString(),
+      formatted: lastUpdate ? formatLastUpdate(lastUpdate) : 'Agora'
+    });
+  } catch (error) {
+    console.error('Erro ao buscar último update:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+module.exports = { getTeams, getTeamById, getPlayers, getPlayerById, getChampionStats, getTotalPlayersCount, getLastUpdateTime };
 
 // Helper functions
+function formatLastUpdate(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Agora';
+  if (diffMins < 60) return `há ${diffMins} min`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `há ${diffHours}h`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  return `há ${diffDays}d`;
+}
+
 function getTeamLogo(teamName) {
   const logos = {
     'LOUD': '🔊',

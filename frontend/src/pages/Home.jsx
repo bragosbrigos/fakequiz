@@ -1,11 +1,39 @@
-import { useState } from 'react';
-import { LeagueTabs, RankingsTable } from '../components/home/RankingsSection';
+import { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import { LeagueTabs, RankingsTable } from './RankingsSection';
 import { ScheduleCarousel } from '../components/schedule/ScheduleCarousel';
 import { NotificationToggle } from '../components/common/NotificationToggle';
 
 export function Home() {
-  const [currentLeague, setCurrentLeague] = useState('CBLOL');
-  
+  const [currentLeague, setCurrentLeague] = useState('ALL');
+  const [totalPlayers, setTotalPlayers] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(null);
+
+  useEffect(() => {
+    // Buscar total de jogadores
+    const fetchTotalPlayers = async () => {
+      try {
+        const data = await api.getTotalPlayersCount();
+        setTotalPlayers(data.total);
+      } catch (error) {
+        console.error('Erro ao buscar total de jogadores:', error);
+      }
+    };
+
+    // Buscar última atualização
+    const fetchLastUpdate = async () => {
+      try {
+        const data = await api.getLastUpdateTime();
+        setLastUpdate(data.formatted);
+      } catch (error) {
+        console.error('Erro ao buscar última atualização:', error);
+      }
+    };
+
+    fetchTotalPlayers();
+    fetchLastUpdate();
+  }, []);
+
   return (
     <div className="animate-fadeIn">
       {/* Hero Section */}
@@ -23,7 +51,9 @@ export function Home() {
           {/* Quick Stats */}
           <div className="flex flex-wrap justify-center gap-6 lg:gap-12">
             <div className="text-center">
-              <div className="font-display font-bold text-3xl text-gold-400">1,247</div>
+              <div className="font-display font-bold text-3xl text-gold-400">
+                {totalPlayers !== null ? totalPlayers.toLocaleString('pt-BR') : '...'}
+              </div>
               <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Jogadores</div>
             </div>
             <div className="text-center">
@@ -31,7 +61,9 @@ export function Home() {
               <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Ligas</div>
             </div>
             <div className="text-center">
-              <div className="font-display font-bold text-3xl text-accent-purple">24/7</div>
+              <div className="font-display font-bold text-3xl text-accent-purple">
+                {lastUpdate || '...'}
+              </div>
               <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Atualização</div>
             </div>
           </div>
