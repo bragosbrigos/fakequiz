@@ -112,11 +112,11 @@ export function RankingsTable({ league }) {
                         <img 
                           src={player.image_url} 
                           alt={player.name}
-                          className="w-9 h-9 rounded-full object-cover border border-gold-600/30"
+                          className="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400/20 to-gold-600/20 border border-gold-600/30 flex items-center justify-center text-sm">
-                          {player.teamLogo}
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-400/20 to-gold-600/20 flex items-center justify-center text-base">
+                          🎮
                         </div>
                       )}
                       <div>
