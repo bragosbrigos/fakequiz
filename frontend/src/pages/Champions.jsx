@@ -116,9 +116,12 @@ const Champions = () => {
   };
 
   const getChampionIcon = (championName, iconUrl) => {
-    if (iconUrl) return iconUrl;
+    // Priorizar icon_url do backend
+    if (iconUrl && iconUrl.trim() !== '') {
+      return iconUrl;
+    }
+    // Fallback para ddragon se não tiver icon_url
     if (!championName) return null;
-    // Formatar nome do campeão para URL (remove espaços, acentos, etc.)
     const formattedName = championName
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')

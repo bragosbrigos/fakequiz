@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const csvParser = require('csv-parser');
 const { Readable } = require('stream');
+const https = require('https');
+const axios = require('axios');
 
 const LEAGUES = [
   { name: 'LCS', url: 'https://oracleselixir.com/stats/players/byTournament/LCS%2F2026%20Season%2FSpring%20Season' },
@@ -299,7 +301,7 @@ async function scrapeChampions() {
           }
         }
 
-        // Consolidar dados de campeões com mesmo nome e role (usando chaves case-insensitive)
+        // Consolidar dados de campeões com mesmo nome e role (SOMAR estatísticas)
         const champMap = new Map();
         for (const champ of leagueChampions) {
           const keys = Object.keys(champ);
@@ -307,6 +309,7 @@ async function scrapeChampions() {
           
           const champName = champ[findKey(['champion', 'champ', 'name'])] || 'Unknown';
           const role = (champ[findKey(['role', 'lane', 'position'])] || 'UNKNOWN').toUpperCase();
+          const iconKey = findKey(['icon', 'image', 'url']);
           const key = `${champName}-${role}`;
           
           if (champMap.has(key)) {
@@ -318,12 +321,18 @@ async function scrapeChampions() {
             const deathsKey = findKey(['deaths', 'd']);
             const assistsKey = findKey(['assists', 'a']);
             
-            existingChamp[gamesKey] = (parseInt(existingChamp[gamesKey]) || 0) + (parseInt(champ[gamesKey]) || 0);
-            existingChamp[winsKey] = (parseInt(existingChamp[winsKey]) || 0) + (parseInt(champ[winsKey]) || 0);
-            existingChamp[bansKey] = (parseInt(existingChamp[bansKey]) || 0) + (parseInt(champ[bansKey]) || 0);
-            existingChamp[killsKey] = (parseInt(existingChamp[killsKey]) || 0) + (parseInt(champ[killsKey]) || 0);
-            existingChamp[deathsKey] = (parseInt(existingChamp[deathsKey]) || 0) + (parseInt(champ[deathsKey]) || 0);
-            existingChamp[assistsKey] = (parseInt(existingChamp[assistsKey]) || 0) + (parseInt(champ[assistsKey]) || 0);
+            // SOMAR todas as estatísticas
+            existingChamp[gamesKey] = String((parseInt(existingChamp[gamesKey]) || 0) + (parseInt(champ[gamesKey]) || 0));
+            existingChamp[winsKey] = String((parseInt(existingChamp[winsKey]) || 0) + (parseInt(champ[winsKey]) || 0));
+            existingChamp[bansKey] = String((parseInt(existingChamp[bansKey]) || 0) + (parseInt(champ[bansKey]) || 0));
+            existingChamp[killsKey] = String((parseInt(existingChamp[killsKey]) || 0) + (parseInt(champ[killsKey]) || 0));
+            existingChamp[deathsKey] = String((parseInt(existingChamp[deathsKey]) || 0) + (parseInt(champ[deathsKey]) || 0));
+            existingChamp[assistsKey] = String((parseInt(existingChamp[assistsKey]) || 0) + (parseInt(champ[assistsKey]) || 0));
+            
+            // Manter o icon_url se existir
+            if (!existingChamp[iconKey] && champ[iconKey]) {
+              existingChamp[iconKey] = champ[iconKey];
+            }
           } else {
             champMap.set(key, { ...champ });
           }
@@ -366,13 +375,83 @@ async function scrapeChampions() {
     }
 
     console.log(`Total de campeões extraídos: ${allChampions.length}`);
-    return allChampions;
+    
+    // Buscar imagens dos campeões da API do League of Legends
+    console.log('Buscando imagens dos campeões...');
+    const championImages = await fetchChampionImages();
+    
+    // Adicionar URLs das imagens aos campeões
+    const championsWithImages = allChampions.map(champ => {
+      const keys = Object.keys(champ);
+      const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
+      const iconKey = findKey(['icon', 'image', 'url']);
+      const champName = champ[findKey(['champion', 'champ', 'name'])] || '';
+      
+      // Se já tem icon_url, manter
+      if (champ[iconKey] && champ[iconKey].trim() !== '') {
+        return champ;
+      }
+      
+      // Tentar encontrar a imagem pelo nome do campeão
+      const formattedName = formatChampionName(champName);
+      const imageUrl = championImages[formattedName] || null;
+      
+      if (imageUrl) {
+        return { ...champ, [iconKey || 'icon_url']: imageUrl };
+      }
+      
+      return champ;
+    });
+    
+    console.log(`${championsWithImages.filter(c => {
+      const keys = Object.keys(c);
+      const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
+      const iconKey = findKey(['icon', 'image', 'url']);
+      return c[iconKey];
+    }).length} campeões com imagens`);
+    
+    return championsWithImages;
   } catch (error) {
     console.error('Erro no scrape de campeões:', error);
     throw error;
   } finally {
     await browser.close();
   }
+}
+
+// Função para buscar todas as imagens dos campeões da API do League of Legends
+async function fetchChampionImages() {
+  try {
+    const response = await axios.get('https://ddragon.leagueoflegends.com/cdn/14.1.1/data/en_US/champion.json');
+    const championData = response.data.data;
+    
+    const imageMap = {};
+    for (const [key, champion] of Object.entries(championData)) {
+      imageMap[key.toUpperCase()] = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${key}.png`;
+      
+      // Adicionar variações de nome
+      const formattedName = formatChampionName(champion.name);
+      if (formattedName !== key.toUpperCase()) {
+        imageMap[formattedName] = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${key}.png`;
+      }
+    }
+    
+    console.log(`✅ ${Object.keys(imageMap).length} imagens de campeões carregadas`);
+    return imageMap;
+  } catch (error) {
+    console.error('❌ Erro ao buscar imagens dos campeões:', error.message);
+    return {};
+  }
+}
+
+// Formatar nome do campeão para comparação
+function formatChampionName(name) {
+  if (!name) return '';
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
 }
 
 module.exports = { scrapePlayers, scrapeTeams, scrapeChampions };

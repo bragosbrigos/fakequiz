@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './ScheduleCarousel.css';
+import { NotificationButton } from '../common/NotificationButton';
 
 export function ScheduleCarousel() {
   const [matches, setMatches] = useState([]);
@@ -126,9 +127,12 @@ export function ScheduleCarousel() {
   return (
     <section className="schedule-section">
       <div className="schedule-container">
-        <h2 className="schedule-title">
-          <span className="text-gradient">Cronograma da Semana</span>
-        </h2>
+        <div className="schedule-header">
+          <h2 className="schedule-title">
+            <span className="text-gradient">Cronograma da Semana</span>
+          </h2>
+          <NotificationButton />
+        </div>
         
         <div 
           className="schedule-carousel"
