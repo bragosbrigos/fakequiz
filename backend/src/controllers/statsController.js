@@ -230,7 +230,7 @@ const getChampionStats = async (req, res) => {
   }
 };
 
-module.exports = { getTeams, getPlayers, getPlayerById, getChampionStats };
+module.exports = { getTeams, getTeamById, getPlayers, getPlayerById, getChampionStats };
 
 // Helper functions
 function getTeamLogo(teamName) {

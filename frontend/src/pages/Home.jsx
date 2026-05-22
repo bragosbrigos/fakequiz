@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LeagueTabs, RankingsTable } from '../components/home/RankingsSection';
-import { TopChampionsChart, TopKDAChart } from '../components/home/StatsCharts';
+import { ScheduleCarousel } from '../components/schedule/ScheduleCarousel';
 
 export function Home() {
   const [currentLeague, setCurrentLeague] = useState('CBLOL');
@@ -37,18 +37,8 @@ export function Home() {
         </div>
       </section>
 
-      {/* Charts Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="font-display font-bold text-2xl text-white mb-6">
-          <span className="text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
-            Estatísticas Globais
-          </span>
-        </h2>
-        <div className="grid md:grid-cols-2 gap-6">
-          <TopChampionsChart />
-          <TopKDAChart />
-        </div>
-      </section>
+      {/* Schedule Carousel Section - Substitui Charts */}
+      <ScheduleCarousel />
 
       {/* Rankings Section - Main Content */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

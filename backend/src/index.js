@@ -5,6 +5,7 @@ require('dotenv').config();
 const { createTables } = require('./config/schema');
 const { startScheduler } = require('./scripts/scheduler');
 const statsRoutes = require('./routes/statsRoutes');
+const scheduleRoutes = require('./routes/scheduleRoutes');
 const { runExtraction } = require('./services/dataPipeline');
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', statsRoutes);
+app.use('/api', scheduleRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -38,6 +40,11 @@ async function startServer() {
     startScheduler();
     console.log('Agendador iniciado');
     
+    // Sincronizar partidas ao iniciar o servidor
+    const { fetchAndStoreMatches } = require('./services/matchScheduleService');
+    console.log('Sincronizando partidas na inicialização...');
+    await fetchAndStoreMatches();
+    
     app.listen(PORT, () => {
       console.log(`Servidor rodando na porta ${PORT}`);
       console.log(`Endpoints disponíveis:`);
@@ -46,6 +53,8 @@ async function startServer() {
       console.log(`  GET /api/players - Lista todos os jogadores`);
       console.log(`  GET /api/players/:league - Jogadores por liga`);
       console.log(`  GET /api/player/:id - Detalhes do jogador`);
+      console.log(`  GET /api/schedule - Cronograma de partidas`);
+      console.log(`  POST /api/schedule/sync - Sincronizar partidas manualmente`);
       console.log(`  POST /api/extract - Executa extração manual`);
       console.log(`  GET /health - Health check`);
     });

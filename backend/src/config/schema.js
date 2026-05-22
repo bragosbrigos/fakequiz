@@ -54,6 +54,37 @@ const createTables = async () => {
     );
   `;
 
+  const createMatchesTable = `
+    CREATE TABLE IF NOT EXISTS matches (
+      id SERIAL PRIMARY KEY,
+      match_id_api INTEGER UNIQUE NOT NULL,
+      name VARCHAR(255),
+      scheduled_at TIMESTAMP NOT NULL,
+      status VARCHAR(50) DEFAULT 'not_started',
+      number_of_games INTEGER DEFAULT 1,
+      league_id INTEGER,
+      league_name VARCHAR(255),
+      league_slug VARCHAR(255),
+      league_image_url VARCHAR(500),
+      tournament_id INTEGER,
+      tournament_name VARCHAR(255),
+      team1_id INTEGER,
+      team1_name VARCHAR(255),
+      team1_acronym VARCHAR(50),
+      team1_logo_url VARCHAR(500),
+      team1_dark_logo_url VARCHAR(500),
+      team2_id INTEGER,
+      team2_name VARCHAR(255),
+      team2_acronym VARCHAR(50),
+      team2_logo_url VARCHAR(500),
+      team2_dark_logo_url VARCHAR(500),
+      stream_url VARCHAR(500),
+      slug VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await pool.query(createTeamsTable);
     console.log('Teams table created successfully');
@@ -63,6 +94,9 @@ const createTables = async () => {
     
     await pool.query(createChampionStatsTable);
     console.log('Champion stats table created successfully');
+    
+    await pool.query(createMatchesTable);
+    console.log('Matches table created successfully');
   } catch (error) {
     console.error('Error creating tables:', error);
     throw error;
