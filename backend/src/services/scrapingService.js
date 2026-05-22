@@ -299,21 +299,31 @@ async function scrapeChampions() {
           }
         }
 
-        // Consolidar dados de campeões com mesmo nome e role
+        // Consolidar dados de campeões com mesmo nome e role (usando chaves case-insensitive)
         const champMap = new Map();
         for (const champ of leagueChampions) {
-          const champName = champ.Champion || champ.champion;
-          const role = (champ.Role || champ.role || 'UNKNOWN').toUpperCase();
+          const keys = Object.keys(champ);
+          const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
+          
+          const champName = champ[findKey(['champion', 'champ', 'name'])] || 'Unknown';
+          const role = (champ[findKey(['role', 'lane', 'position'])] || 'UNKNOWN').toUpperCase();
           const key = `${champName}-${role}`;
           
           if (champMap.has(key)) {
             const existingChamp = champMap.get(key);
-            existingChamp.games_played = (parseInt(existingChamp.games_played) || 0) + (parseInt(champ.games_played) || 0);
-            existingChamp.wins = (parseInt(existingChamp.wins) || 0) + (parseInt(champ.wins) || 0);
-            existingChamp.bans = (parseInt(existingChamp.bans) || 0) + (parseInt(champ.bans) || 0);
-            existingChamp.kills = (parseInt(existingChamp.kills) || 0) + (parseInt(champ.kills) || 0);
-            existingChamp.deaths = (parseInt(existingChamp.deaths) || 0) + (parseInt(champ.deaths) || 0);
-            existingChamp.assists = (parseInt(existingChamp.assists) || 0) + (parseInt(champ.assists) || 0);
+            const gamesKey = findKey(['games', 'gp', 'games played']);
+            const winsKey = findKey(['wins', 'w']);
+            const bansKey = findKey(['bans']);
+            const killsKey = findKey(['kills', 'k']);
+            const deathsKey = findKey(['deaths', 'd']);
+            const assistsKey = findKey(['assists', 'a']);
+            
+            existingChamp[gamesKey] = (parseInt(existingChamp[gamesKey]) || 0) + (parseInt(champ[gamesKey]) || 0);
+            existingChamp[winsKey] = (parseInt(existingChamp[winsKey]) || 0) + (parseInt(champ[winsKey]) || 0);
+            existingChamp[bansKey] = (parseInt(existingChamp[bansKey]) || 0) + (parseInt(champ[bansKey]) || 0);
+            existingChamp[killsKey] = (parseInt(existingChamp[killsKey]) || 0) + (parseInt(champ[killsKey]) || 0);
+            existingChamp[deathsKey] = (parseInt(existingChamp[deathsKey]) || 0) + (parseInt(champ[deathsKey]) || 0);
+            existingChamp[assistsKey] = (parseInt(existingChamp[assistsKey]) || 0) + (parseInt(champ[assistsKey]) || 0);
           } else {
             champMap.set(key, { ...champ });
           }

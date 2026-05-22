@@ -5,7 +5,9 @@ const { scrapePlayers, scrapeTeams, scrapeChampions } = require('./scrapingServi
 async function saveChampionStatsToDB(champions) {
   console.log(`Salvando ${champions.length} registros de campeões no banco...`);
   
-  for (const champ of champions) {
+  for (const rawChamp of champions) {
+    const champ = normalizeChampionData(rawChamp);
+    
     const query = `
       INSERT INTO champion_stats (champion_name, role, league, games_played, wins, bans, total_kills, total_deaths, total_assists, icon_url, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
@@ -91,6 +93,47 @@ function normalizeTeamData(rawTeam) {
     losses: parseInt(rawTeam[lossesKey]) || 0,
     league: rawTeam.league,
     logo_url: rawTeam.logo_url || null
+  };
+}
+
+function normalizeChampionData(rawChampion) {
+  const keys = Object.keys(rawChampion);
+  
+  const findKey = (patterns) => {
+    return keys.find(k => {
+      const keyLower = k.toLowerCase();
+      return patterns.some(p => {
+        // Para patterns de letra única (k, d, a), faz match exato
+        if (p.length === 1) {
+          return keyLower === p.toLowerCase();
+        }
+        // Para outros patterns, verifica igualdade ou inclusão
+        return keyLower === p.toLowerCase() || keyLower.includes(p.toLowerCase());
+      });
+    });
+  };
+
+  const championKey = findKey(['champion', 'champ', 'name']);
+  const roleKey = findKey(['role', 'lane', 'position']);
+  const gamesKey = findKey(['games', 'gp', 'matches', 'games played']);
+  const winsKey = findKey(['wins', 'w', 'win']);
+  const bansKey = findKey(['bans']);
+  const killsKey = findKey(['kills', 'k']);
+  const deathsKey = findKey(['deaths', 'd']);
+  const assistsKey = findKey(['assists', 'a']);
+  const iconKey = findKey(['icon', 'image', 'url']);
+
+  return {
+    champion_name: rawChampion[championKey] || 'Unknown',
+    role: (rawChampion[roleKey] || 'UNKNOWN').trim().toUpperCase(),
+    games_played: parseInt(rawChampion[gamesKey]) || 0,
+    wins: parseInt(rawChampion[winsKey]) || 0,
+    bans: parseInt(rawChampion[bansKey]) || 0,
+    kills: parseInt(rawChampion[killsKey]) || 0,
+    deaths: parseInt(rawChampion[deathsKey]) || 0,
+    assists: parseInt(rawChampion[assistsKey]) || 0,
+    icon_url: rawChampion[iconKey] ? String(rawChampion[iconKey]).trim() : null,
+    league: rawChampion.league
   };
 }
 
@@ -190,4 +233,4 @@ async function runExtraction() {
   }
 }
 
-module.exports = { runExtraction, savePlayersToDB, saveTeamsToDB, saveChampionStatsToDB };
+module.exports = { runExtraction, savePlayersToDB, saveTeamsToDB, saveChampionStatsToDB, normalizeChampionData };
