@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Pool } = require('pg');
-const { scrapeAllChampions } = require('../src/services/scrapeService');
+const { scrapeAllChampions } = require('../services/scrapeService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
