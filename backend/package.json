@@ -7,7 +7,9 @@
     "dev": "nodemon src/index.js",
     "extract": "node -e \"require('./src/services/dataPipeline').runExtraction()\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "update-images": "node src/scripts/updateImages.js"
+    "update-images": "node src/scripts/updateImages.js",
+    "build:frontend": "cd ../frontend && npm install && npm run build",
+    "start:prod": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -26,5 +28,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
