@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { api } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler);
 
@@ -10,6 +11,7 @@ export function Compare() {
   const [loading, setLoading] = useState(true);
   const [player1Id, setPlayer1Id] = useState('');
   const [player2Id, setPlayer2Id] = useState('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadPlayers = async () => {
@@ -73,7 +75,7 @@ export function Compare() {
       },
       title: {
         display: true,
-        text: 'Comparação de Estatísticas',
+        text: t('statsComparison'),
         color: '#F0C040',
         font: { size: 16, weight: 'bold' },
       },
@@ -103,33 +105,33 @@ export function Compare() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="font-display font-bold text-3xl text-white mb-8">
           <span className="text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
-            Comparar Jogadores
+            {t('comparePlayers')}
           </span>
         </h1>
 
         {/* Selectors */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Jogador 1</label>
+            <label className="block text-sm text-gray-400 mb-2">{t('player1')}</label>
             <select
               value={player1Id}
               onChange={(e) => setPlayer1Id(e.target.value)}
               className="w-full bg-dark-100 border border-gray-700/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-600/40"
             >
-              <option value="">Selecione...</option>
+              <option value="">{t('select')}</option>
               {allPlayers.map(p => (
                 <option key={p.id} value={p.id}>{p.name} - {p.team}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Jogador 2</label>
+            <label className="block text-sm text-gray-400 mb-2">{t('player2')}</label>
             <select
               value={player2Id}
               onChange={(e) => setPlayer2Id(e.target.value)}
               className="w-full bg-dark-100 border border-gray-700/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-600/40"
             >
-              <option value="">Selecione...</option>
+              <option value="">{t('select')}</option>
               {allPlayers.map(p => (
                 <option key={p.id} value={p.id}>{p.name} - {p.team}</option>
               ))}
@@ -150,8 +152,8 @@ export function Compare() {
               <div className="bg-gradient-to-br from-gold-600/10 to-dark-100 border border-gold-600/30 rounded-2xl p-6">
                 <div className="flex items-center gap-4 mb-6">
                   {player1.image_url ? (
-                    <img 
-                      src={player1.image_url} 
+                    <img
+                      src={player1.image_url}
                       alt={player1.name}
                       className="w-16 h-16 rounded-full object-cover border border-gold-600/30"
                     />
@@ -185,8 +187,8 @@ export function Compare() {
               <div className="bg-gradient-to-br from-accent-blue/10 to-dark-100 border border-accent-blue/30 rounded-2xl p-6">
                 <div className="flex items-center gap-4 mb-6">
                   {player2.image_url ? (
-                    <img 
-                      src={player2.image_url} 
+                    <img
+                      src={player2.image_url}
                       alt={player2.name}
                       className="w-16 h-16 rounded-full object-cover border border-accent-blue/30"
                     />
@@ -214,7 +216,7 @@ export function Compare() {
 
         {!player1 && !player2 && (
           <div className="text-center py-16 text-gray-500">
-            Selecione dois jogadores para comparar suas estatísticas
+            {t('selectTwoPlayers')}
           </div>
         )}
       </div>
