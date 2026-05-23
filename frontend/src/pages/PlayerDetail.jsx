@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../context/LanguageContext';
 
 export function PlayerDetail() {
   const { playerId, league } = useParams();
   const navigate = useNavigate();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -47,7 +49,7 @@ export function PlayerDetail() {
   // Calcular wins e losses baseado no winrate e games
   const wins = Math.round((player.wr / 100) * player.games);
   const losses = player.games - wins;
-  
+
   const wrColor = player.wr >= 60 ? 'text-green-400' : player.wr >= 50 ? 'text-yellow-400' : 'text-red-400';
 
   // Preparar dados para o gráfico de radar
@@ -72,7 +74,7 @@ export function PlayerDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             {/* Player Image - Left Side, Larger */}
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="flex-shrink-0">
@@ -113,7 +115,7 @@ export function PlayerDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
             {/* Stats Grid */}
             <div className="space-y-4">
-              <h3 className="font-display font-bold text-lg text-white mb-4">Estatísticas Principais</h3>
+              <h3 className="font-display font-bold text-lg text-white mb-4">{t('mainStats')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-dark-200 rounded-xl p-4 text-center">
                   <div className="text-3xl font-display font-bold text-gold-400">{player.kda.toFixed(2)}</div>
@@ -121,22 +123,22 @@ export function PlayerDetail() {
                 </div>
                 <div className="bg-dark-200 rounded-xl p-4 text-center">
                   <div className={`text-3xl font-display font-bold ${wrColor}`}>{player.wr}%</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Win Rate</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('winRate')}</div>
                 </div>
                 <div className="bg-dark-200 rounded-xl p-4 text-center">
                   <div className="text-3xl font-display font-bold text-accent-blue">{player.csPerMin?.toFixed(1) || 'N/A'}</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">CS/Média</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('csPerMin')}</div>
                 </div>
                 <div className="bg-dark-200 rounded-xl p-4 text-center">
                   <div className="text-3xl font-display font-bold text-accent-red">{player.kp}%</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Kill Participation</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('killParticipation')}</div>
                 </div>
               </div>
 
               <div className="bg-dark-200 rounded-xl p-4">
                 <div className="text-center">
                   <div className="text-2xl font-display font-bold text-white">{player.games}</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Partidas Jogadas</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('gamesPlayed')}</div>
                 </div>
               </div>
 
@@ -144,18 +146,18 @@ export function PlayerDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-4 text-center">
                   <div className="text-2xl font-display font-bold text-green-400">{wins}</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Vitórias</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('wins')}</div>
                 </div>
                 <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 text-center">
                   <div className="text-2xl font-display font-bold text-red-400">{losses}</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Derrotas</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">{t('losses')}</div>
                 </div>
               </div>
             </div>
 
             {/* Gráfico de Radar */}
             <div className="bg-dark-200 rounded-xl p-4">
-              <h3 className="font-display font-bold text-lg text-white mb-4 text-center">Radar de Performance</h3>
+              <h3 className="font-display font-bold text-lg text-white mb-4 text-center">{t('performanceRadar')}</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
@@ -178,8 +180,8 @@ export function PlayerDetail() {
           {/* Message about champions data */}
           <div className="px-6 pb-6">
             <div className="bg-dark-200 rounded-xl p-6 text-center">
-              <p className="text-gray-400">Dados de campeões serão disponíveis em breve.</p>
-              <p className="text-sm text-gray-500 mt-2">Esta funcionalidade será implementada quando a pipeline de scraping for atualizada com os links das estatísticas de campeões.</p>
+              <p className="text-gray-400">{t('championsDataSoon')}</p>
+              <p className="text-sm text-gray-500 mt-2">{t('functionalityNote')}</p>
             </div>
           </div>
         </div>
