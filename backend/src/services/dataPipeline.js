@@ -4,10 +4,10 @@ const { scrapePlayers, scrapeTeams, scrapeChampions } = require('./scrapingServi
 // Função para salvar estatísticas de campeões no banco de dados
 async function saveChampionStatsToDB(champions) {
   console.log(`Salvando ${champions.length} registros de campeões no banco...`);
-  
+
   for (const rawChamp of champions) {
     const champ = normalizeChampionData(rawChamp);
-    
+
     const query = `
       INSERT INTO champion_stats (champion_name, role, league, games_played, win_percentage, ban_percentage, total_kills, total_deaths, total_assists, icon_url, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
@@ -21,7 +21,7 @@ async function saveChampionStatsToDB(champions) {
         icon_url = COALESCE(EXCLUDED.icon_url, champion_stats.icon_url),
         updated_at = NOW()
     `;
-    
+
     const gamesPlayed = champ.games_played || 1;
     const values = [
       champ.champion_name,
@@ -35,16 +35,16 @@ async function saveChampionStatsToDB(champions) {
       champ.assists || 0,
       champ.icon_url || null
     ];
-    
+
     await pool.query(query, values);
   }
-  
+
   console.log('Estatísticas de campeões salvas com sucesso!');
 }
 
 function normalizePlayerData(rawPlayer) {
   const keys = Object.keys(rawPlayer);
-  
+
   const findKey = (patterns) => {
     return keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase() || k.toLowerCase().includes(p.toLowerCase())));
   };
@@ -53,7 +53,8 @@ function normalizePlayerData(rawPlayer) {
   const teamKey = findKey(['team', 'org']);
   const positionKey = findKey(['pos', 'position', 'role', 'lane']);
   const gamesKey = findKey(['games', 'gp', 'matches']);
-  const winsKey = findKey(['wins', 'w', 'win']);
+  const winsKey = findKey(['wins', 'w', 'w%']);
+  const winPercentageKey = findKey(['win %', 'win%', 'win percentage', 'win_pct']);
   const kdaKey = findKey(['kda']);
   const kpKey = findKey(['kp', 'kill participation']);
   const goldKey = findKey(['gold per 10', 'gold@10', 'gpm']);
@@ -62,7 +63,15 @@ function normalizePlayerData(rawPlayer) {
 
   const gamesPlayed = parseInt(rawPlayer[gamesKey]) || 0;
   const wins = parseInt(rawPlayer[winsKey]) || 0;
-  const winPercentage = gamesPlayed > 0 ? parseFloat(((wins / gamesPlayed) * 100).toFixed(2)) : 0;
+
+  // Try to get win_percentage directly from CSV first (e.g., "65%"), otherwise calculate it
+  let winPercentage;
+  if (winPercentageKey && rawPlayer[winPercentageKey]) {
+    const rawWinPct = rawPlayer[winPercentageKey];
+    winPercentage = parseFloat(rawWinPct.replace('%', '')) || (gamesPlayed > 0 ? parseFloat(((wins / gamesPlayed) * 100).toFixed(2)) : 0);
+  } else {
+    winPercentage = gamesPlayed > 0 ? parseFloat(((wins / gamesPlayed) * 100).toFixed(2)) : 0;
+  }
 
   return {
     name: rawPlayer[nameKey] || 'Unknown',
@@ -83,7 +92,7 @@ function normalizePlayerData(rawPlayer) {
 
 function normalizeTeamData(rawTeam) {
   const keys = Object.keys(rawTeam);
-  
+
   const findKey = (patterns) => {
     return keys.find(k => patterns.some(p => k.toLowerCase().includes(p)));
   };
@@ -105,7 +114,7 @@ function normalizeTeamData(rawTeam) {
 
 function normalizeChampionData(rawChampion) {
   const keys = Object.keys(rawChampion);
-  
+
   const findKey = (patterns) => {
     return keys.find(k => {
       const keyLower = k.toLowerCase();
@@ -146,13 +155,13 @@ function normalizeChampionData(rawChampion) {
 
 async function savePlayersToDB(players) {
   console.log(`Salvando ${players.length} jogadores no banco...`);
-  
+
   for (const player of players) {
     const normalized = normalizePlayerData(player);
-    
+
     // Garante que win_percentage esteja dentro do limite válido (0-100)
     const safeWinPercentage = Math.min(Math.max(normalized.win_percentage || 0, 0), 100);
-    
+
     const query = `
       INSERT INTO players (name, team_name, position, league, games_played, kda, kill_participation, gold_per_min, dpm, cspm, win_percentage, real_name, image_url, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
@@ -170,7 +179,7 @@ async function savePlayersToDB(players) {
         image_url = COALESCE(EXCLUDED.image_url, players.image_url),
         updated_at = NOW()
     `;
-    
+
     const values = [
       normalized.name,
       normalized.team_name,
@@ -186,19 +195,19 @@ async function savePlayersToDB(players) {
       normalized.real_name || null,
       normalized.image_url || null
     ];
-    
+
     await pool.query(query, values);
   }
-  
+
   console.log('Jogadores salvos com sucesso!');
 }
 
 async function saveTeamsToDB(teams) {
   console.log(`Salvando ${teams.length} times no banco...`);
-  
+
   for (const team of teams) {
     const normalized = normalizeTeamData(team);
-    
+
     const query = `
       INSERT INTO teams (name, league, games_played, wins, losses, logo_url, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, NOW())
@@ -209,7 +218,7 @@ async function saveTeamsToDB(teams) {
         logo_url = COALESCE(EXCLUDED.logo_url, teams.logo_url),
         updated_at = NOW()
     `;
-    
+
     const values = [
       normalized.name,
       normalized.league,
@@ -218,26 +227,26 @@ async function saveTeamsToDB(teams) {
       normalized.losses,
       normalized.logo_url || null
     ];
-    
+
     await pool.query(query, values);
   }
-  
+
   console.log('Times salvos com sucesso!');
 }
 
 async function runExtraction() {
   try {
     console.log('=== Iniciando Pipeline de Extração ===');
-    
+
     const players = await scrapePlayers();
     await savePlayersToDB(players);
-    
+
     const teams = await scrapeTeams();
     await saveTeamsToDB(teams);
-    
+
     const champions = await scrapeChampions();
     await saveChampionStatsToDB(champions);
-    
+
     console.log('=== Pipeline Concluída com Sucesso ===');
   } catch (error) {
     console.error('Erro na pipeline de extração:', error);
