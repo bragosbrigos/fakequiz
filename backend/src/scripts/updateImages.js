@@ -17,7 +17,7 @@ function convertToSlug(teamName) {
 
 const TEAM_NAME_MAPPINGS = {
     'RED Canids': 'red',
-    'Movistar KOI': 'movistar',
+    'Movistar KOI Carps': 'movistar',
     'ThunderTalk Gaming': 'thunder-talk-gaming',
     'LØS': 'los',
     'Ninjas in Pyjamas': 'ninjas',
@@ -27,6 +27,7 @@ const TEAM_NAME_MAPPINGS = {
     'Ultra Prime': 'ultra-prime',
     'GiantX': 'giant',
     'DN SOOPers': 'dn-soopers',
+    'Leviatan': 'leviatan',
 };
 
 async function getTeamsFromDB() {
