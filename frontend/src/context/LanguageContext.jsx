@@ -109,6 +109,14 @@ const translations = {
 
     daysOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+
+    toBeDefined: 'To Be Defined',
+    kda: 'KDA',
+    csPerMin: 'CS/Min',
+    kp: 'KP%',
+    wr: 'WR%',
+    damage: 'Damage',
+    gold: 'Gold',
   },
 
   pt: {
@@ -216,8 +224,16 @@ const translations = {
     avgDeaths: 'Média de Deaths',
     avgAssists: 'Média de Assists',
 
-    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', '  Qui', 'Sex', 'Sáb'],
+    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
     months: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+
+    toBeDefined: 'A Definir',
+    kda: 'KDA',
+    csPerMin: 'CS/Média',
+    kp: 'KP%',
+    wr: 'WR%',
+    damage: 'Dano',
+    gold: 'Ouro',
   },
 };
 
