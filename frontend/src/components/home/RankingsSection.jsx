@@ -13,7 +13,7 @@ const LEAGUES = {
 
 export function LeagueTabs({ currentLeague, onLeagueChange }) {
   const { t } = useLanguage();
-  
+
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
       {Object.entries(LEAGUES).map(([key, { name }]) => (
@@ -37,18 +37,19 @@ export function RankingsTable({ league }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadRankings = async () => {
       setLoading(true);
       try {
         // Se league for 'ALL', busca todos os jogadores sem filtro de liga
-        const data = league === 'ALL' 
+        const data = league === 'ALL'
           ? await api.getRankingsAll()
           : await api.getRankings(league);
         // Limita aos 10 melhores
         setPlayers(data.slice(0, 10));
-        
+
         // Buscar última atualização
         const updateData = await api.getLastUpdateTime();
         setLastUpdate(updateData.formatted);
@@ -72,23 +73,23 @@ export function RankingsTable({ league }) {
   return (
     <div className="bg-dark-100 border border-gray-700/30 rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-700/30 flex items-center justify-between">
-        <h2 className="font-display font-bold text-lg text-gradient bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
-          {league === 'ALL' ? 'Global' : `${league}`} — Rankings 2026
+        <h2 className="font-display font-bold text-lg text-white">
+          {league === 'ALL' ? t('globalRankings') : `${league} — Rankings 2026`}
         </h2>
-        <span className="text-xs text-gray-500">Atualizado: {lastUpdate || 'há alguns minutos'}</span>
+        <span className="text-xs text-gray-500">{t('updated')}: {lastUpdate || t('minutesAgo')}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-700/20">
               <th className="px-6 py-3 text-left">#</th>
-              <th className="px-6 py-3 text-left">Jogador</th>
-              <th className="px-6 py-3 text-left">Time</th>
+              <th className="px-6 py-3 text-left">{t('player')}</th>
+              <th className="px-6 py-3 text-left">{t('team')}</th>
               <th className="px-6 py-3 text-center">KDA</th>
               <th className="px-6 py-3 text-center">CS/M</th>
               <th className="px-6 py-3 text-center">KP%</th>
               <th className="px-6 py-3 text-center">WR%</th>
-              <th className="px-6 py-3 text-center">Partidas</th>
+              <th className="px-6 py-3 text-center">{t('games')}</th>
             </tr>
           </thead>
           <tbody>
@@ -111,8 +112,8 @@ export function RankingsTable({ league }) {
                   <td className="px-6 py-4">{rankBadge}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={player.image_url || 'https://static.lolesports.com/players/1675150271520_placeholder.png'} 
+                      <img
+                        src={player.image_url || 'https://static.lolesports.com/players/1675150271520_placeholder.png'}
                         alt={player.name}
                         className="w-16 h-16 rounded-full object-cover"
                       />
