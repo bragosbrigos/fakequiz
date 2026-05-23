@@ -12,7 +12,7 @@ const translations = {
     compare: 'Compare',
     searchPlayer: 'Search player...',
     noPlayerFound: 'No player found',
-    
+
     // Home
     statistics: 'Statistics',
     proPlayers: 'of Pro Players',
@@ -23,17 +23,20 @@ const translations = {
     allLeagues: 'All Leagues',
     updated: 'Updated',
     minutesAgo: 'a few minutes ago',
-    
+    minuteAgo: '1 min ago',
+
     // Rankings Table
     player: 'Player',
     team: 'Team',
     games: 'Games',
-    
+    globalRankings: 'Global — Rankings 2026',
+    leagueRankings: '{{league}} — Rankings 2026',
+
     // Players Page
     allPlayers: 'All Players',
     searchByNameTeamOrLeague: 'Search by name, team or league...',
     noPlayersFound: 'No players found for',
-    
+
     // Team Pages
     allTeams: 'All Teams',
     noTeamsFound: 'No teams found for this league',
@@ -41,7 +44,7 @@ const translations = {
     losses: 'Losses',
     players: 'Players',
     noPlayersForTeam: 'No players found for this team',
-    
+
     // Player Detail
     mainStats: 'Main Stats',
     winRate: 'Win Rate',
@@ -51,7 +54,7 @@ const translations = {
     performanceRadar: 'Performance Radar',
     championsDataSoon: 'Champion data will be available soon.',
     functionalityNote: 'This feature will be implemented when the scraping pipeline is updated with champion stats links.',
-    
+
     // Compare Page
     comparePlayers: 'Compare Players',
     player1: 'Player 1',
@@ -59,7 +62,7 @@ const translations = {
     select: 'Select...',
     statsComparison: 'Stats Comparison',
     selectTwoPlayers: 'Select two players to compare their statistics',
-    
+
     // Champions Page
     championStats: 'Detailed Champion Statistics',
     searchChampion: 'Search champion...',
@@ -71,18 +74,18 @@ const translations = {
     displaying: 'Displaying',
     of: 'of',
     champions: 'champions',
-    
+
     // Schedule
     upcomingMatches: 'Upcoming Matches',
     weeklySchedule: 'Weekly Schedule',
     loadingMatches: 'Loading matches...',
     noMatchesScheduled: 'No matches scheduled for the next 7 days.',
     watch: 'Watch',
-    
+
     // Footer
     unofficialData: 'Unofficial data. Riot Games does not endorse this site.',
     allRightsReserved: 'All rights reserved.',
-    
+
     // Common
     close: 'Close',
     cancel: 'Cancel',
@@ -98,6 +101,17 @@ const translations = {
     role: 'Role',
     region: 'Region',
     league: 'League',
+    matches: 'Matches',
+    champion: 'Champion',
+    kills: 'Kills',
+    deaths: 'Deaths',
+    assists: 'Assists',
+    kda: 'KDA',
+    banRate: 'Ban Rate',
+    pickRate: 'Pick Rate',
+    avgKills: 'Avg Kills',
+    avgDeaths: 'Avg Deaths',
+    avgAssists: 'Avg Assists',
   },
   pt: {
     // Navbar
@@ -108,7 +122,7 @@ const translations = {
     compare: 'Comparar',
     searchPlayer: 'Buscar jogador...',
     noPlayerFound: 'Nenhum jogador encontrado',
-    
+
     // Home
     statistics: 'Estatísticas',
     proPlayers: 'de Pro Players',
@@ -119,17 +133,20 @@ const translations = {
     allLeagues: 'Todas as Ligas',
     updated: 'Atualizado',
     minutesAgo: 'há alguns minutos',
-    
+    minuteAgo: '1 min atrás',
+
     // Rankings Table
     player: 'Jogador',
     team: 'Time',
     games: 'Partidas',
-    
+    globalRankings: 'Global — Rankings 2026',
+    leagueRankings: '{{league}} — Rankings 2026',
+
     // Players Page
     allPlayers: 'Todos os Jogadores',
     searchByNameTeamOrLeague: 'Buscar por nome, time ou liga...',
     noPlayersFound: 'Nenhum jogador encontrado para',
-    
+
     // Team Pages
     allTeams: 'Times',
     noTeamsFound: 'Nenhum time encontrado para esta liga',
@@ -137,7 +154,7 @@ const translations = {
     losses: 'Derrotas',
     players: 'Jogadores',
     noPlayersForTeam: 'Nenhum jogador encontrado para este time',
-    
+
     // Player Detail
     mainStats: 'Estatísticas Principais',
     winRate: 'Win Rate',
@@ -147,7 +164,7 @@ const translations = {
     performanceRadar: 'Radar de Performance',
     championsDataSoon: 'Dados de campeões serão disponíveis em breve.',
     functionalityNote: 'Esta funcionalidade será implementada quando a pipeline de scraping for atualizada com os links das estatísticas de campeões.',
-    
+
     // Compare Page
     comparePlayers: 'Comparar Jogadores',
     player1: 'Jogador 1',
@@ -155,7 +172,7 @@ const translations = {
     select: 'Selecione...',
     statsComparison: 'Comparação de Estatísticas',
     selectTwoPlayers: 'Selecione dois jogadores para comparar suas estatísticas',
-    
+
     // Champions Page
     championStats: 'Estatísticas Detalhadas de Campeões',
     searchChampion: 'Buscar campeão...',
@@ -167,18 +184,18 @@ const translations = {
     displaying: 'Exibindo',
     of: 'de',
     champions: 'campeões',
-    
+
     // Schedule
     upcomingMatches: 'Próximas Partidas',
     weeklySchedule: 'Cronograma da Semana',
     loadingMatches: 'Carregando partidas...',
     noMatchesScheduled: 'Nenhuma partida agendada para os próximos 7 dias.',
     watch: 'Assistir',
-    
+
     // Footer
     unofficialData: 'Dados não oficiais. Riot Games não endossa este site.',
     allRightsReserved: 'Todos os direitos reservados.',
-    
+
     // Common
     close: 'Fechar',
     cancel: 'Cancelar',
@@ -194,6 +211,17 @@ const translations = {
     role: 'Função',
     region: 'Região',
     league: 'Liga',
+    matches: 'Partidas',
+    champion: 'Campeão',
+    kills: 'Kills',
+    deaths: 'Deaths',
+    assists: 'Assists',
+    kda: 'KDA',
+    banRate: 'Ban Rate',
+    pickRate: 'Pick Rate',
+    avgKills: 'Média de Kills',
+    avgDeaths: 'Média de Deaths',
+    avgAssists: 'Média de Assists',
   },
 };
 
