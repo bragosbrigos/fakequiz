@@ -133,7 +133,7 @@ async function scrapePlayers() {
           if (filePath && fs.existsSync(filePath)) {
             const players = await parseCSV(filePath);
             players.forEach(p => p.league = league.name);
-            
+
 
             for (const player of players) {
               const playerName = player.Player || player.player || 'Unknown';
@@ -141,7 +141,7 @@ async function scrapePlayers() {
                 const existingPlayer = playerStatsMap.get(playerName);
                 const gamesKey = Object.keys(player).find(k => k.toLowerCase().includes('games') || k.toLowerCase() === 'gp');
                 const winsKey = Object.keys(player).find(k => k.toLowerCase().includes('win') && !k.toLowerCase().includes('percentage'));
-                
+
                 existingPlayer[gamesKey] = String((parseInt(existingPlayer[gamesKey]) || 0) + (parseInt(player[gamesKey]) || 0));
                 existingPlayer[winsKey] = String((parseInt(existingPlayer[winsKey]) || 0) + (parseInt(player[winsKey]) || 0));
               } else {
@@ -284,7 +284,7 @@ async function scrapeChampions() {
                 continue;
               }
             }
-            
+
             const champions = await parseCSV(filePath);
             champions.forEach(c => c.league = league.name);
             leagueChampions = leagueChampions.concat(champions);
@@ -298,12 +298,12 @@ async function scrapeChampions() {
         for (const champ of leagueChampions) {
           const keys = Object.keys(champ);
           const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
-          
+
           const champName = champ[findKey(['champion', 'champ', 'name'])] || 'Unknown';
-          const role = (champ[findKey(['role', 'lane', 'position'])] || 'UNKNOWN').toUpperCase();
+          const role = (champ[findKey(['role', 'lane', 'pos'])] || 'UNKNOWN').toUpperCase();
           const iconKey = findKey(['icon', 'image', 'url']);
           const key = `${champName}-${role}`;
-          
+
           if (champMap.has(key)) {
             const existingChamp = champMap.get(key);
             const gamesKey = findKey(['games', 'gp', 'games played']);
@@ -312,7 +312,7 @@ async function scrapeChampions() {
             const killsKey = findKey(['kills', 'k']);
             const deathsKey = findKey(['deaths', 'd']);
             const assistsKey = findKey(['assists', 'a']);
-            
+
 
             existingChamp[gamesKey] = String((parseInt(existingChamp[gamesKey]) || 0) + (parseInt(champ[gamesKey]) || 0));
             existingChamp[winsKey] = String((parseInt(existingChamp[winsKey]) || 0) + (parseInt(champ[winsKey]) || 0));
@@ -320,7 +320,7 @@ async function scrapeChampions() {
             existingChamp[killsKey] = String((parseInt(existingChamp[killsKey]) || 0) + (parseInt(champ[killsKey]) || 0));
             existingChamp[deathsKey] = String((parseInt(existingChamp[deathsKey]) || 0) + (parseInt(champ[deathsKey]) || 0));
             existingChamp[assistsKey] = String((parseInt(existingChamp[assistsKey]) || 0) + (parseInt(champ[assistsKey]) || 0));
-            
+
 
             if (!existingChamp[iconKey] && champ[iconKey]) {
               existingChamp[iconKey] = champ[iconKey];
@@ -354,7 +354,7 @@ async function scrapeChampions() {
               continue;
             }
           }
-          
+
           const champions = await parseCSV(filePath);
           champions.forEach(c => c.league = league.name);
           allChampions.push(...champions);
@@ -365,36 +365,45 @@ async function scrapeChampions() {
       }
     }
 
+    // Fetch images from standard API
     const championImages = await fetchChampionImages();
-    
+
+    // Fetch CBLOL-specific images separately
+    const cblolChampionImages = await fetchCBLOLChampionImages();
 
     const championsWithImages = allChampions.map(champ => {
       const keys = Object.keys(champ);
       const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
       const iconKey = findKey(['icon', 'image', 'url']);
       const champName = champ[findKey(['champion', 'champ', 'name'])] || '';
-      
+      const league = champ.league || '';
 
+      // If already has an icon_url, keep it
       if (champ[iconKey] && champ[iconKey].trim() !== '') {
         return champ;
       }
-      
 
+      // For CBLOL champions, use the CBLOL-specific image fetcher first
+      if (league === 'CBLOL') {
+        const formattedName = formatChampionName(champName);
+        const cblolImageUrl = cblolChampionImages[formattedName];
+
+        if (cblolImageUrl) {
+          return { ...champ, [iconKey || 'icon_url']: cblolImageUrl };
+        }
+      }
+
+      // Fallback to standard champion images
       const formattedName = formatChampionName(champName);
       const imageUrl = championImages[formattedName] || null;
-      
+
       if (imageUrl) {
         return { ...champ, [iconKey || 'icon_url']: imageUrl };
       }
-      
+
       return champ;
     });
 
-      const findKey = (patterns) => keys.find(k => patterns.some(p => k.toLowerCase() === p.toLowerCase()));
-      const iconKey = findKey(['icon', 'image', 'url']);
-      return c[iconKey];
-    }).length} campeões com imagens`);
-    
     return championsWithImages;
   } catch (error) {
 
@@ -408,11 +417,10 @@ async function fetchChampionImages() {
   try {
     const response = await axios.get('https://ddragon.leagueoflegends.com/cdn/16.1.1/data/en_US/champion.json');
     const championData = response.data.data;
-    
+
     const imageMap = {};
     for (const [key, champion] of Object.entries(championData)) {
       imageMap[key.toUpperCase()] = `https://ddragon.leagueoflegends.com/cdn/16.1.1/img/champion/${key}.png`;
-      
 
       const formattedName = formatChampionName(champion.name);
       if (formattedName !== key.toUpperCase()) {
@@ -422,7 +430,39 @@ async function fetchChampionImages() {
 
     return imageMap;
   } catch (error) {
+    return {};
+  }
+}
 
+async function fetchCBLOLChampionImages() {
+  try {
+    // Fetch the latest version dynamically or use a fixed version
+    const versionResponse = await axios.get('https://ddragon.leagueoflegends.com/api/versions.json');
+    const versions = versionResponse.data;
+    const latestVersion = versions[0] || '16.1.1';
+
+    const response = await axios.get(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/pt_BR/champion.json`);
+    const championData = response.data.data;
+
+    const imageMap = {};
+    for (const [key, champion] of Object.entries(championData)) {
+      // Use Portuguese-Brazilian data but same image URLs
+      imageMap[key.toUpperCase()] = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${key}.png`;
+
+      const formattedName = formatChampionName(champion.name);
+      if (formattedName !== key.toUpperCase()) {
+        imageMap[formattedName] = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${key}.png`;
+      }
+
+      // Also map using the Portuguese name variations
+      const ptBRFormattedName = formatChampionName(champion.title || champion.name);
+      if (ptBRFormattedName && ptBRFormattedName !== key.toUpperCase()) {
+        imageMap[ptBRFormattedName] = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${key}.png`;
+      }
+    }
+
+    return imageMap;
+  } catch (error) {
     return {};
   }
 }
