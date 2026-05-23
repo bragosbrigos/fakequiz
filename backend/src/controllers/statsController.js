@@ -3,10 +3,10 @@ const pool = require('../config/database');
 const getTeams = async (req, res) => {
   try {
     const { league } = req.params;
-    
+
     let query;
     let values;
-    
+
     if (league) {
       query = 'SELECT * FROM teams WHERE league = $1 ORDER BY wins DESC';
       values = [league];
@@ -14,7 +14,7 @@ const getTeams = async (req, res) => {
       query = 'SELECT * FROM teams ORDER BY league, wins DESC';
       values = [];
     }
-    
+
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (error) {
@@ -26,33 +26,33 @@ const getTeams = async (req, res) => {
 const getTeamById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
 
     const teamQuery = 'SELECT * FROM teams WHERE id = $1';
     const teamResult = await pool.query(teamQuery, [id]);
-    
+
     if (teamResult.rows.length === 0) {
       return res.status(404).json({ error: 'Time não encontrado' });
     }
-    
+
     const team = teamResult.rows[0];
-    
+
 
     const playersQuery = `
-      SELECT * FROM players 
-      WHERE team_name = $1 
-      ORDER BY 
-        CASE position 
-          WHEN 'TOP' THEN 1 
-          WHEN 'JUNGLE' THEN 2 
-          WHEN 'MID' THEN 3 
-          WHEN 'ADC' THEN 4 
-          WHEN 'SUPPORT' THEN 5 
-          ELSE 6 
+      SELECT * FROM players
+      WHERE team_name = $1
+      ORDER BY
+        CASE position
+          WHEN 'TOP' THEN 1
+          WHEN 'JUNGLE' THEN 2
+          WHEN 'MID' THEN 3
+          WHEN 'ADC' THEN 4
+          WHEN 'SUPPORT' THEN 5
+          ELSE 6
         END
     `;
     const playersResult = await pool.query(playersQuery, [team.name]);
-    
+
 
     const players = playersResult.rows.map(player => ({
       id: player.id.toString(),
@@ -71,7 +71,7 @@ const getTeamById = async (req, res) => {
       damage: Math.floor(parseFloat(player.dpm) * 20) || 0,
       gold: Math.floor(parseFloat(player.gold_per_min) * 10) || 0,
     }));
-    
+
     const teamData = {
       id: team.id.toString(),
       name: team.name,
@@ -83,7 +83,7 @@ const getTeamById = async (req, res) => {
       region: getRegionFromLeague(team.league),
       players: players,
     };
-    
+
     res.json(teamData);
   } catch (error) {
 
@@ -95,27 +95,27 @@ const getPlayers = async (req, res) => {
   try {
     const { league } = req.params;
     const { position } = req.query;
-    
+
     let query = 'SELECT * FROM players WHERE 1=1';
     const values = [];
     let paramCount = 1;
-    
+
     if (league) {
       query += ` AND league = $${paramCount}`;
       values.push(league);
       paramCount++;
     }
-    
+
     if (position) {
       query += ` AND position = $${paramCount}`;
       values.push(position);
       paramCount++;
     }
-    
+
     query += ' ORDER BY kda DESC';
-    
+
     const result = await pool.query(query, values);
-    
+
 
     const players = result.rows.map(player => ({
       id: player.id.toString(),
@@ -134,7 +134,7 @@ const getPlayers = async (req, res) => {
       damage: Math.floor(parseFloat(player.dpm) * 20) || 0,
       gold: Math.floor(parseFloat(player.gold_per_min) * 10) || 0,
     }));
-    
+
     res.json(players);
   } catch (error) {
 
@@ -145,14 +145,14 @@ const getPlayers = async (req, res) => {
 const getPlayerById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const query = 'SELECT * FROM players WHERE id = $1';
     const result = await pool.query(query, [id]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Jogador não encontrado' });
     }
-    
+
     const player = result.rows[0];
     const playerData = {
       id: player.id.toString(),
@@ -171,7 +171,7 @@ const getPlayerById = async (req, res) => {
       damage: Math.floor(parseFloat(player.dpm) * 20) || 0,
       gold: Math.floor(parseFloat(player.gold_per_min) * 10) || 0,
     };
-    
+
     res.json(playerData);
   } catch (error) {
 
@@ -192,7 +192,7 @@ const getChampionStats = async (req, res) => {
         values.push(role.toUpperCase());
         paramCount++;
       }
-      
+
       if (league && league !== 'GLOBAL') {
         query += ` AND league = $${paramCount}`;
         values.push(league.toUpperCase());
@@ -200,9 +200,9 @@ const getChampionStats = async (req, res) => {
       }
 
       query += ' ORDER BY games_played DESC';
-      
+
       const result = await pool.query(query, values);
-    
+
 
     const champions = result.rows.map(champ => ({
       id: champ.id.toString(),
@@ -222,7 +222,7 @@ const getChampionStats = async (req, res) => {
       total_assists: champ.total_assists || 0,
       icon_url: champ.icon_url || null,
     }));
-    
+
     res.json(champions);
   } catch (error) {
 
@@ -244,11 +244,10 @@ const getTotalPlayersCount = async (req, res) => {
 
 const getLastUpdateTime = async (req, res) => {
   try {
-    const { language } = req.query;
 
     const query = `
-      SELECT 
-        MAX(updated_at) as last_update 
+      SELECT
+        MAX(updated_at) as last_update
       FROM (
         SELECT updated_at FROM matches WHERE updated_at IS NOT NULL
         UNION ALL
@@ -257,10 +256,10 @@ const getLastUpdateTime = async (req, res) => {
     `;
     const result = await pool.query(query);
     const lastUpdate = result.rows[0]?.last_update;
-    
-    res.json({ 
+
+    res.json({
       lastUpdate: lastUpdate || new Date().toISOString(),
-      formatted: lastUpdate ? formatLastUpdate(lastUpdate, language || 'en') : (language === 'pt' ? 'Agora' : 'Now')
+      formatted: lastUpdate ? formatLastUpdate(lastUpdate) : 'Agora'
     });
   } catch (error) {
 
@@ -270,43 +269,20 @@ const getLastUpdateTime = async (req, res) => {
 
 module.exports = { getTeams, getTeamById, getPlayers, getPlayerById, getChampionStats, getTotalPlayersCount, getLastUpdateTime };
 
-function formatLastUpdate(dateString, language = 'en') {
+function formatLastUpdate(dateString) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
-  
-  if (diffMins < 1) return language === 'pt' ? 'Agora' : 'Now';
-  if (diffMins < 60) return language === 'pt' ? `há ${diffMins} min` : `${diffMins} min ago`;
-  
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return language === 'pt' ? `há ${diffHours} horas` : `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  
-  const diffDays = Math.floor(diffHours / 24);
-  return language === 'pt' ? `há ${diffDays} dias` : `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-}
 
-function getTeamLogo(teamName) {
-  const logos = {
-    'LOUD': '🔊',
-    'paiN Gaming': '🎯',
-    'FURIA': '🐾',
-    'INTZ': '🔴',
-    'Fluxo': '⚡',
-    'RED Canids': '🔺',
-    'KaBuM!': '💥',
-    'LOS': '🦁',
-    'T1': '🏆',
-    'Gen.G': '🟡',
-    'DRX': '🐉',
-    'G2 Esports': '🎮',
-    'Fnatic': '🟠',
-    'Cloud9': '☁️',
-    'Team Liquid': '🌊',
-    'JD Gaming': '🔴',
-    'Bilibili Gaming': '📺',
-  };
-  return logos[teamName] || '🎮';
+  if (diffMins < 1) return 'Agora';
+  if (diffMins < 60) return `${diffMins} min`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} h`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} d`;
 }
 
 function getRegionFromLeague(league) {
