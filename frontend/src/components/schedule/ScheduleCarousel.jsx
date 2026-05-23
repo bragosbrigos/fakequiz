@@ -83,8 +83,8 @@ export function ScheduleCarousel() {
   };
 
   const getTeamName = (opponent) => {
-    if (!opponent || opponent.type !== 'Team' || !opponent.opponent) return 'TBD';
-    return opponent.opponent.acronym || opponent.opponent.name;
+    if (!opponent || opponent.type !== 'Team' || !opponent.opponent) return t('toBeDefined');
+    return opponent.opponent.acronym || opponent.opponent.name || t('toBeDefined');
   };
 
   const goToSlide = (index) => {
