@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { api } from '../services/api';
 import { LeagueTabs, RankingsTable } from '../components/home/RankingsSection';
 import { ScheduleCarousel } from '../components/schedule/ScheduleCarousel';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Home() {
   const [currentLeague, setCurrentLeague] = useState('ALL');
