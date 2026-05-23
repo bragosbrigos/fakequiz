@@ -21,7 +21,11 @@ const translations = {
     allLeagues: 'All Leagues',
     updated: 'Updated',
     minutesAgo: 'a few minutes ago',
-    minuteAgo: ' min ago',
+    minuteAgo: '1 min ago',
+    minutesAgoPlural: '{{count}} min ago',
+    hoursAgoPlural: '{{count}} hours ago',
+    daysAgoPlural: '{{count}} days ago',
+    now: 'Now',
 
     player: 'Player',
     team: 'Team',
@@ -105,6 +109,14 @@ const translations = {
 
     daysOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+
+    toBeDefined: 'To Be Defined',
+    kda: 'KDA',
+    csPerMin: 'CS/Min',
+    kp: 'KP%',
+    wr: 'WR%',
+    damage: 'Damage',
+    gold: 'Gold',
   },
 
   pt: {
@@ -127,6 +139,10 @@ const translations = {
     updated: 'Atualizado',
     minutesAgo: 'há alguns minutos',
     minuteAgo: '1 min atrás',
+    minutesAgoPlural: 'há {{count}} min',
+    hoursAgoPlural: 'há {{count}} horas',
+    daysAgoPlural: 'há {{count}} dias',
+    now: 'Agora',
 
     player: 'Jogador',
     team: 'Time',
@@ -208,8 +224,16 @@ const translations = {
     avgDeaths: 'Média de Deaths',
     avgAssists: 'Média de Assists',
 
-    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', '  Qui', 'Sex', 'Sáb'],
+    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
     months: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+
+    toBeDefined: 'A Definir',
+    kda: 'KDA',
+    csPerMin: 'CS/Média',
+    kp: 'KP%',
+    wr: 'WR%',
+    damage: 'Dano',
+    gold: 'Ouro',
   },
 };
 

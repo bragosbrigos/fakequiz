@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import './ScheduleCarousel.css';
-import { NotificationButton } from '../common/NotificationButton';
 import { useLanguage } from '../../context/LanguageContext';
 
 export function ScheduleCarousel() {
@@ -84,8 +83,8 @@ export function ScheduleCarousel() {
   };
 
   const getTeamName = (opponent) => {
-    if (!opponent || opponent.type !== 'Team' || !opponent.opponent) return 'TBD';
-    return opponent.opponent.acronym || opponent.opponent.name;
+    if (!opponent || opponent.type !== 'Team' || !opponent.opponent) return t('toBeDefined');
+    return opponent.opponent.acronym || opponent.opponent.name || t('toBeDefined');
   };
 
   const goToSlide = (index) => {
@@ -129,14 +128,9 @@ export function ScheduleCarousel() {
   return (
     <section className="schedule-section">
       <div className="schedule-container">
-        <div className="schedule-header">
-          <h2 className="schedule-title">
-            <span className="text-gradient">{t('weeklySchedule')}</span>
-          </h2>
-          <div className="notification-button-container">
-            <NotificationButton />
-          </div>
-        </div>
+        <h2 className="schedule-title">
+          <span className="text-gradient">{t('weeklySchedule')}</span>
+        </h2>
 
         <div
           className="schedule-carousel"
@@ -236,9 +230,6 @@ export function ScheduleCarousel() {
                             {t('watch')}
                           </a>
                         )}
-                        <div className="notification-button-inline">
-                          <NotificationButton />
-                        </div>
                       </div>
                     </div>
                   </div>
