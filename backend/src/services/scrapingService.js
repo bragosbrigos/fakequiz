@@ -229,4 +229,6 @@ async function scrapePlayers() {
 
 module.exports = {
   scrapePlayers,
+  scrapeTeams,
+  scrapeChampions,
 };
