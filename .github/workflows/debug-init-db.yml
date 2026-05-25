@@ -1,0 +1,209 @@
+name: Debug - Init Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Nível de log (verbose, info, error)'
+        required: false
+        default: 'verbose'
+
+jobs:
+  init-db-debug:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Debug - Check Environment Variables
+        run: |
+          echo "🔍 Verificando variáveis de ambiente..."
+          echo "DATABASE_URL exists: ${{ env.DATABASE_URL != '' }}"
+          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+            echo "✅ DATABASE_URL configurado nos secrets"
+            # Não mostrar o valor completo por segurança
+            echo "Prefixo: $(echo '${{ secrets.DATABASE_URL }}' | cut -c1-20)..."
+          else
+            echo "❌ DATABASE_URL não configurado!"
+            exit 1
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Debug - Test Database Connection
+        working-directory: ./backend
+        run: |
+          echo "🔍 Testando conexão com o banco de dados..."
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+            pool.connect((err, client, release) => {
+              if (err) {
+                console.error('❌ Erro de conexão:', err.stack);
+                process.exit(1);
+              }
+              console.log('✅ Conexão estabelecida com sucesso!');
+              client.query('SELECT NOW()', (err, result) => {
+                release();
+                if (err) {
+                  console.error('❌ Erro na query:', err.stack);
+                  process.exit(1);
+                }
+                console.log('📅 Data do servidor:', result.rows[0].now);
+                pool.end();
+                process.exit(0);
+              });
+            });
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Debug - List Existing Tables
+        working-directory: ./backend
+        run: |
+          echo "🔍 Listando tabelas existentes..."
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+            pool.query(
+              \"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name\",
+              (err, result) => {
+                if (err) {
+                  console.error('❌ Erro:', err.stack);
+                  process.exit(1);
+                }
+                console.log('📋 Tabelas existentes:');
+                if (result.rows.length === 0) {
+                  console.log('   (nenhuma tabela encontrada)');
+                } else {
+                  result.rows.forEach(row => console.log('   -', row.table_name));
+                }
+                pool.end();
+              }
+            );
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Debug - Run Schema Creation
+        working-directory: ./backend
+        run: |
+          echo "🔍 Executando criação das tabelas com debug..."
+          node -e "
+            const { createTables } = require('./src/config/schema');
+
+            async function run() {
+              try {
+                console.log('🚀 Iniciando criação das tabelas...');
+                console.log('⏰ Timestamp:', new Date().toISOString());
+
+                await createTables();
+
+                console.log('✅ Todas as tabelas criadas/atualizadas com sucesso!');
+                console.log('⏰ Timestamp final:', new Date().toISOString());
+
+                // Verificar tabelas após criação
+                const { Pool } = require('pg');
+                const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+                const result = await pool.query(
+                  \"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name\"
+                );
+
+                console.log('📋 Tabelas após criação:');
+                result.rows.forEach(row => console.log('   -', row.table_name));
+
+                await pool.end();
+                process.exit(0);
+              } catch (error) {
+                console.error('❌ ERRO DETALHADO:');
+                console.error('   Message:', error.message);
+                console.error('   Code:', error.code);
+                console.error('   Detail:', error.detail);
+                console.error('   Hint:', error.hint);
+                console.error('   Stack:', error.stack);
+                process.exit(1);
+              }
+            }
+
+            run();
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Debug - Verify Table Structure
+        working-directory: ./backend
+        if: always()
+        run: |
+          echo "🔍 Verificando estrutura das tabelas..."
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+            const tables = ['teams', 'players', 'champion_stats', 'matches', 'user_preferences'];
+
+            async function checkTables() {
+              for (const table of tables) {
+                try {
+                  const result = await pool.query(
+                    'SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = \$1 ORDER BY ordinal_position',
+                    [table]
+                  );
+
+                  if (result.rows.length > 0) {
+                    console.log(\`✅ Tabela '\${table}' existe com \${result.rows.length} colunas:\`);
+                    result.rows.slice(0, 5).forEach(col => {
+                      console.log(\`   - \${col.column_name} (\${col.data_type})\`);
+                    });
+                    if (result.rows.length > 5) {
+                      console.log(\`   ... e mais \${result.rows.length - 5} colunas\`);
+                    }
+                  } else {
+                    console.log(\`❌ Tabela '\${table}' não encontrada!\`);
+                  }
+                } catch (error) {
+                  console.log(\`❌ Erro ao verificar tabela '\${table}': \${error.message}\`);
+                }
+              }
+              await pool.end();
+            }
+
+            checkTables();
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 📊 Resumo da Execução"
+          echo ""
+          echo "- **Data/Hora:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "- **Status:** ${{ job.status }}"
+          echo "- **Runner:** ${{ runner.os }} (${{ runner.arch }})"
+          echo ""
+          echo "### Próximos Passos"
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Banco de dados inicializado com sucesso!"
+            echo "1. Execute o workflow 'sync-matches' para popular os dados"
+            echo "2. Verifique se as partidas aparecem no frontend"
+          else
+            echo "❌ Ocorreu um erro. Verifique os logs acima para detalhes."
+            echo "1. Confirme que o DATABASE_URL está correto"
+            echo "2. Verifique se há permissões adequadas no banco"
+            echo "3. Analise a mensagem de erro detalhada"
+          fi
