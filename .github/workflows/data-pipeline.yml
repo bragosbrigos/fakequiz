@@ -1,63 +1,359 @@
-name: Data Pipeline - Extração e Sincronização
+name: Data Pipeline - Debug Completo
 
 on:
-  schedule:
-    # Executar extração de dados a cada hora
-    - cron: '0 * * * *'
-    # Executar sincronização de partidas a cada 30 minutos
-    - cron: '*/30 * * * *'
   workflow_dispatch:
-    # Permitir execução manual para testes
+    inputs:
+      init_db:
+        description: 'Inicializar banco de dados antes da extração?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      verbose:
+        description: 'Modo verbose (logs detalhados)?'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   extract-data:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Trigger Data Extraction
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependências do backend
         run: |
-          echo "Iniciando pipeline de extração de dados..."
-          
-          # Fazer requisição POST para o endpoint de extração
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.API_BASE_URL }}/api/extract" \
-            -H "Content-Type: application/json")
-          
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-          
-          echo "Resposta da API:"
-          echo "$BODY"
-          
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "✅ Pipeline de extração concluída com sucesso!"
-            exit 0
+          cd backend
+          npm ci
+
+      - name: Instalar dependências do sistema para Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            chromium-browser \
+            libgbm1 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libxshmfence1 \
+            libxtst6 \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libgtk-3-0 \
+            fonts-liberation \
+            libasound2 \
+            libatspi2.0-0 \
+            libdrm2 \
+            libxkbcommon-x11-0 \
+            libglx-mesa0 \
+            libgl1 \
+            libglib2.0-0 \
+            libdbus-1-3 \
+            libexpat1 \
+            libxcb1 \
+            libx11-xcb1 \
+            libxrender1 \
+            libxi6 \
+            libxcursor1 \
+            libxfixes3 \
+            libxext6 \
+            libx11-6 \
+            libfontconfig1 \
+            libfreetype6 \
+            libpixman-1-0 \
+            libcairo2 \
+            libpango-1.0-0 \
+            libharfbuzz0b \
+            libpangocairo-1.0-0 \
+            libgdk-pixbuf2.0-0 \
+            libwayland-client0 \
+            libwayland-cursor0 \
+            libwayland-egl1 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libxkbcommon0 \
+            libxshmfence1 \
+            libasound2t64 \
+            libatspi2.0-0t64 \
+            libdbus-1-3 \
+            libnspr4 \
+            libnss3 \
+            libcups2t64 \
+            libdrm2 \
+            libxkbfile1 \
+            libxmuu1 \
+            xdg-utils \
+            libvulkan1 \
+            liblcms2-2 \
+            libjsoncpp26 \
+            libpci3 \
+            libudev1 \
+            libavahi-client3 \
+            libkrb5support0 \
+            libk5crypto3 \
+            libkrb5-3 \
+            libgssapi-krb5-2 \
+            libldap-2.5-0 \
+            libsasl2-2 \
+            libsqlite3-0 \
+            libicu74 \
+            libxml2 \
+            libffi8 \
+            libhogweed6t64 \
+            libnettle8t64 \
+            libgnutls30t64 \
+            libunistring5 \
+            libidn2-0 \
+            libp11-kit0 \
+            libtasn1-6 \
+            libcap-ng0 \
+            libaudit1 \
+            libbz2-1.0 \
+            liblzma5 \
+            libzstd1 \
+            libblkid1 \
+            libmount1 \
+            libselinux1 \
+            libseccomp2 \
+            libapparmor1 \
+            libproc2-0 \
+            libsystemd0 \
+            libgpg-error0 \
+            libgcrypt20 \
+            liblz4-1 \
+            librtmp1 \
+            libssh-4 \
+            libpsl5t64 \
+            libmpfr6 \
+            libreadline8t64 \
+            libncursesw6 \
+            libtinfo6 \
+            libuuid1 \
+            libcom-err2 \
+            libss2 \
+            liblogrotate0 \
+            libpopt0 \
+            libjson-c5 \
+            libfdisk1 \
+            libsmartcols1 \
+            libcap2 \
+            libattr1 \
+            libacl1 \
+            libmd0 \
+            libbsd0 \
+            libxdmcp6 \
+            libedit2 \
+            libcbor0.10 \
+            libfido2-1 \
+            libxau6 \
+            libgomp1 \
+            libgcc-s1 \
+            libc6 \
+            ca-certificates \
+            fonts-ipafont-gothic \
+            fonts-wqy-zenhei \
+            fonts-tlwg-loma-otf \
+            fonts-freefont-ttf
+
+      - name: 🔍 Verificar variáveis de ambiente
+        run: |
+          echo "=== VERIFICAÇÃO DE VARIÁVEIS DE AMBIENTE ==="
+          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+            echo "✅ DATABASE_URL configurado"
+            echo "Prefixo: $(echo '${{ secrets.DATABASE_URL }}' | cut -c1-30)..."
           else
-            echo "❌ Erro na extração (HTTP $HTTP_CODE)"
+            echo "❌ DATABASE_URL NÃO CONFIGURADO!"
             exit 1
+          fi
+          
+          if [ -n "${{ secrets.CITO_API_TOKEN }}" ]; then
+            echo "✅ CITO_API_TOKEN configurado"
+          else
+            echo "⚠️ CITO_API_TOKEN não configurado (pode ser opcional)"
+          fi
+          
+          if [ -n "${{ secrets.API_BASE_URL }}" ]; then
+            echo "✅ API_BASE_URL configurado: ${{ secrets.API_BASE_URL }}"
+          else
+            echo "⚠️ API_BASE_URL não configurado"
           fi
 
-  sync-matches:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Sync Match Schedule
+      - name: 🗄️ Testar conexão com o banco de dados
         run: |
-          echo "Sincronizando agenda de partidas..."
+          cd backend
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ 
+              connectionString: process.env.DATABASE_URL,
+              ssl: { rejectUnauthorized: false }
+            });
+            
+            async function test() {
+              try {
+                const client = await pool.connect();
+                const result = await client.query('SELECT NOW()');
+                console.log('✅ Conexão bem-sucedida!');
+                console.log('Horário do banco:', result.rows[0].now);
+                
+                // Listar tabelas existentes
+                const tables = await client.query(
+                  \"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name\"
+                );
+                console.log('\\n📋 Tabelas existentes:');
+                tables.rows.forEach(t => console.log('  -', t.table_name));
+                
+                await client.release();
+                await pool.end();
+              } catch (err) {
+                console.error('❌ Erro de conexão:', err.message);
+                console.error('Detalhes:', err);
+                process.exit(1);
+              }
+            }
+            test();
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: 🏗️ Inicializar banco de dados (opcional)
+        if: github.event.inputs.init_db == 'true'
+        run: |
+          cd backend
+          echo "Inicializando banco de dados..."
+          node -e "
+            const { createTables } = require('./src/config/schema');
+            createTables()
+              .then(() => {
+                console.log('✅ Tabelas criadas/atualizadas com sucesso!');
+                process.exit(0);
+              })
+              .catch(err => {
+                console.error('❌ Erro ao criar tabelas:', err);
+                process.exit(1);
+              });
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: 🐞 Debug: Rodar extração direta com logs detalhados
+        run: |
+          cd backend
+          echo "=== INICIANDO EXTRAÇÃO COM DEBUG ==="
+          echo "NODE_ENV: ${NODE_ENV:-development}"
+          echo "DATABASE_URL prefix: $(echo $DATABASE_URL | cut -c1-30)..."
           
-          # Fazer requisição POST para o endpoint de sincronização
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.API_BASE_URL }}/api/schedule/sync" \
-            -H "Content-Type: application/json")
-          
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-          
-          echo "Resposta da API:"
-          echo "$BODY"
-          
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "✅ Sincronização de partidas concluída com sucesso!"
-            exit 0
+          node --unhandled-rejections=strict -e "
+            const { runExtraction } = require('./src/services/dataPipeline');
+            
+            console.log('\\n🚀 Iniciando pipeline de extração...');
+            
+            runExtraction()
+              .then(result => {
+                console.log('\\n✅ EXTRAÇÃO CONCLUÍDA COM SUCESSO!');
+                console.log('Resultado:', JSON.stringify(result, null, 2));
+                process.exit(0);
+              })
+              .catch(err => {
+                console.error('\\n❌ ERRO CRÍTICO NA EXTRAÇÃO:');
+                console.error('Mensagem:', err.message);
+                console.error('Stack:', err.stack);
+                if (err.cause) {
+                  console.error('Causa:', err.cause);
+                }
+                process.exit(1);
+              });
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CITO_API_TOKEN: ${{ secrets.CITO_API_TOKEN }}
+          NODE_ENV: production
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+
+      - name: 📊 Verificar dados após extração
+        run: |
+          cd backend
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ 
+              connectionString: process.env.DATABASE_URL,
+              ssl: { rejectUnauthorized: false }
+            });
+            
+            async function check() {
+              const client = await pool.connect();
+              
+              const tables = ['teams', 'players', 'champion_stats', 'matches'];
+              
+              for (const table of tables) {
+                try {
+                  const result = await client.query(\`SELECT COUNT(*) FROM \${table}\`);
+                  const count = result.rows[0].count;
+                  console.log(\`📊 Tabela '\${table}': \${count} registros\`);
+                  
+                  if (table === 'matches' && count > 0) {
+                    const sample = await client.query(\`SELECT id, team1_name, team2_name, scheduled_at FROM \${table} LIMIT 3\`);
+                    console.log('  Amostras:');
+                    sample.rows.forEach(row => {
+                      console.log(\`    - \${row.team1_name} vs \${row.team2_name} (\${row.scheduled_at})\`);
+                    });
+                  }
+                } catch (err) {
+                  console.error(\`❌ Erro ao verificar tabela '\${table}': \${err.message}\`);
+                }
+              }
+              
+              await client.release();
+              await pool.end();
+            }
+            check();
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: ✅ Resumo final
+        if: always()
+        run: |
+          echo ""
+          echo "========================================="
+          echo "📊 RESUMO DA EXECUÇÃO"
+          echo "========================================="
+          echo "Data/Hora: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Init DB: ${{ github.event.inputs.init_db }}"
+          echo ""
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ STATUS: SUCESSO"
+            echo ""
+            echo "Próximos passos:"
+            echo "1. Verifique se as partidas aparecem no frontend"
+            echo "2. Acesse a API: ${{ secrets.API_BASE_URL }}/api/schedule"
           else
-            echo "❌ Erro na sincronização (HTTP $HTTP_CODE)"
-            exit 1
+            echo "❌ STATUS: FALHA"
+            echo ""
+            echo "Possíveis causas:"
+            echo "1. Puppeteer não conseguiu iniciar o navegador"
+            echo "2. Site Oracle's Elixir indisponível ou mudou estrutura"
+            echo "3. Problema de conexão com banco de dados"
+            echo "4. Token da API inválido ou expirado"
+            echo ""
+            echo "Verifique os logs acima para detalhes do erro."
           fi
+          echo "========================================="
