@@ -1,5 +1,6 @@
 const { fetchAndStoreMatches, getUpcomingMatches } = require('../services/matchScheduleService');
 const { updateImagesAndRealNames } = require('../scripts/updateImages');
+const { createTables } = require('../config/schema');
 
 exports.getSchedule = async (req, res) => {
   try {
@@ -52,7 +53,6 @@ exports.getSchedule = async (req, res) => {
 
     res.json(formattedMatches);
   } catch (error) {
-
     res.status(500).json({ 
       error: 'Erro interno ao buscar partidas' 
     });
@@ -61,14 +61,12 @@ exports.getSchedule = async (req, res) => {
 
 exports.syncMatches = async (req, res) => {
   try {
-
     const result = await fetchAndStoreMatches();
     res.json({ 
       message: 'Sincronização concluída com sucesso',
       ...result
     });
   } catch (error) {
-
     res.status(500).json({ error: 'Erro ao sincronizar partidas' });
   }
 };
@@ -82,5 +80,17 @@ exports.updateImages = async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar imagens:', error);
     res.status(500).json({ error: 'Erro ao atualizar imagens' });
+  }
+};
+
+exports.initDatabase = async (req, res) => {
+  try {
+    await createTables();
+    res.json({ 
+      message: 'Banco de dados inicializado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao inicializar banco de dados:', error);
+    res.status(500).json({ error: 'Erro ao inicializar banco de dados' });
   }
 };
