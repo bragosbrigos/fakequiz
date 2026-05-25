@@ -47,7 +47,7 @@ jobs:
             libxshmfence1 \
             libxtst6 \
             fonts-liberation \
-            libasound2
+            libasound2t64
 
       - name: 🔍 Verificar Secrets
         run: |
