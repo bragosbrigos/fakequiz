@@ -1,4 +1,4 @@
-name: Data Pipeline - Debug Seguro
+name: Data Pipeline - Debug (Puppeteer Official)
 
 on:
   workflow_dispatch:
@@ -31,23 +31,10 @@ jobs:
         run: npm ci
         working-directory: backend
 
-      - name: Instalar Dependências do Sistema (Puppeteer)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            chromium-browser \
-            libgbm1 \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libgtk-3-0 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxrandr2 \
-            libxshmfence1 \
-            libxtst6 \
-            fonts-liberation \
-            libasound2t64
+      # ✅ Ação Oficial para instalar Chromium e dependências corretas
+      - name: Setup Puppeteer
+        id: puppeteer
+        uses: puppeteer/setup-chromium@v1
 
       - name: 🔍 Verificar Secrets
         run: |
@@ -82,7 +69,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CITO_API_TOKEN: ${{ secrets.CITO_API_TOKEN }}
           NODE_ENV: production
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+          # Usa o caminho instalado pela ação oficial
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.puppeteer.outputs.chromium-path }}
         working-directory: backend
 
       - name: 📊 Contar Registros
