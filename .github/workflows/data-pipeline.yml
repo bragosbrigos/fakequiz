@@ -1,40 +1,20 @@
-name: Data Pipeline - Debug Completo
+name: Data Pipeline - Extração e Sincronização
 
 on:
+  schedule:
+    # Executar extração de dados a cada hora
+    - cron: '0 * * * *'
+    # Executar sincronização de partidas a cada 30 minutos
+    - cron: '*/30 * * * *'
   workflow_dispatch:
-    inputs:
-      init_db:
-        description: 'Inicializar banco de dados antes da extração?'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
-      verbose:
-        description: 'Modo verbose (logs detalhados)?'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
+    # Permitir execução manual para testes
 
 jobs:
   extract-data:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-
+    
       - name: Instalar dependências do backend
         run: |
           cd backend
@@ -171,189 +151,51 @@ jobs:
             fonts-wqy-zenhei \
             fonts-tlwg-loma-otf \
             fonts-freefont-ttf
-
-      - name: 🔍 Verificar variáveis de ambiente
+            
+      - name: Trigger Data Extraction
         run: |
-          echo "=== VERIFICAÇÃO DE VARIÁVEIS DE AMBIENTE ==="
-          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
-            echo "✅ DATABASE_URL configurado"
-            echo "Prefixo: $(echo '${{ secrets.DATABASE_URL }}' | cut -c1-30)..."
+          echo "Iniciando pipeline de extração de dados..."
+          
+          # Fazer requisição POST para o endpoint de extração
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.API_BASE_URL }}/api/extract" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "Resposta da API:"
+          echo "$BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Pipeline de extração concluída com sucesso!"
+            exit 0
           else
-            echo "❌ DATABASE_URL NÃO CONFIGURADO!"
+            echo "❌ Erro na extração (HTTP $HTTP_CODE)"
             exit 1
           fi
+
+  sync-matches:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Sync Match Schedule
+        run: |
+          echo "Sincronizando agenda de partidas..."
           
-          if [ -n "${{ secrets.CITO_API_TOKEN }}" ]; then
-            echo "✅ CITO_API_TOKEN configurado"
-          else
-            echo "⚠️ CITO_API_TOKEN não configurado (pode ser opcional)"
-          fi
+          # Fazer requisição POST para o endpoint de sincronização
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.API_BASE_URL }}/api/schedule/sync" \
+            -H "Content-Type: application/json")
           
-          if [ -n "${{ secrets.API_BASE_URL }}" ]; then
-            echo "✅ API_BASE_URL configurado: ${{ secrets.API_BASE_URL }}"
-          else
-            echo "⚠️ API_BASE_URL não configurado"
-          fi
-
-      - name: 🗄️ Testar conexão com o banco de dados
-        run: |
-          cd backend
-          node -e "
-            const { Pool } = require('pg');
-            const pool = new Pool({ 
-              connectionString: process.env.DATABASE_URL,
-              ssl: { rejectUnauthorized: false }
-            });
-            
-            async function test() {
-              try {
-                const client = await pool.connect();
-                const result = await client.query('SELECT NOW()');
-                console.log('✅ Conexão bem-sucedida!');
-                console.log('Horário do banco:', result.rows[0].now);
-                
-                // Listar tabelas existentes
-                const tables = await client.query(
-                  \"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name\"
-                );
-                console.log('\\n📋 Tabelas existentes:');
-                tables.rows.forEach(t => console.log('  -', t.table_name));
-                
-                await client.release();
-                await pool.end();
-              } catch (err) {
-                console.error('❌ Erro de conexão:', err.message);
-                console.error('Detalhes:', err);
-                process.exit(1);
-              }
-            }
-            test();
-          "
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: 🏗️ Inicializar banco de dados (opcional)
-        if: github.event.inputs.init_db == 'true'
-        run: |
-          cd backend
-          echo "Inicializando banco de dados..."
-          node -e "
-            const { createTables } = require('./src/config/schema');
-            createTables()
-              .then(() => {
-                console.log('✅ Tabelas criadas/atualizadas com sucesso!');
-                process.exit(0);
-              })
-              .catch(err => {
-                console.error('❌ Erro ao criar tabelas:', err);
-                process.exit(1);
-              });
-          "
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: 🐞 Debug: Rodar extração direta com logs detalhados
-        run: |
-          cd backend
-          echo "=== INICIANDO EXTRAÇÃO COM DEBUG ==="
-          echo "NODE_ENV: ${NODE_ENV:-development}"
-          echo "DATABASE_URL prefix: $(echo $DATABASE_URL | cut -c1-30)..."
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
           
-          node --unhandled-rejections=strict -e "
-            const { runExtraction } = require('./src/services/dataPipeline');
-            
-            console.log('\\n🚀 Iniciando pipeline de extração...');
-            
-            runExtraction()
-              .then(result => {
-                console.log('\\n✅ EXTRAÇÃO CONCLUÍDA COM SUCESSO!');
-                console.log('Resultado:', JSON.stringify(result, null, 2));
-                process.exit(0);
-              })
-              .catch(err => {
-                console.error('\\n❌ ERRO CRÍTICO NA EXTRAÇÃO:');
-                console.error('Mensagem:', err.message);
-                console.error('Stack:', err.stack);
-                if (err.cause) {
-                  console.error('Causa:', err.cause);
-                }
-                process.exit(1);
-              });
-          "
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          CITO_API_TOKEN: ${{ secrets.CITO_API_TOKEN }}
-          NODE_ENV: production
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
-
-      - name: 📊 Verificar dados após extração
-        run: |
-          cd backend
-          node -e "
-            const { Pool } = require('pg');
-            const pool = new Pool({ 
-              connectionString: process.env.DATABASE_URL,
-              ssl: { rejectUnauthorized: false }
-            });
-            
-            async function check() {
-              const client = await pool.connect();
-              
-              const tables = ['teams', 'players', 'champion_stats', 'matches'];
-              
-              for (const table of tables) {
-                try {
-                  const result = await client.query(\`SELECT COUNT(*) FROM \${table}\`);
-                  const count = result.rows[0].count;
-                  console.log(\`📊 Tabela '\${table}': \${count} registros\`);
-                  
-                  if (table === 'matches' && count > 0) {
-                    const sample = await client.query(\`SELECT id, team1_name, team2_name, scheduled_at FROM \${table} LIMIT 3\`);
-                    console.log('  Amostras:');
-                    sample.rows.forEach(row => {
-                      console.log(\`    - \${row.team1_name} vs \${row.team2_name} (\${row.scheduled_at})\`);
-                    });
-                  }
-                } catch (err) {
-                  console.error(\`❌ Erro ao verificar tabela '\${table}': \${err.message}\`);
-                }
-              }
-              
-              await client.release();
-              await pool.end();
-            }
-            check();
-          "
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: ✅ Resumo final
-        if: always()
-        run: |
-          echo ""
-          echo "========================================="
-          echo "📊 RESUMO DA EXECUÇÃO"
-          echo "========================================="
-          echo "Data/Hora: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Init DB: ${{ github.event.inputs.init_db }}"
-          echo ""
-          if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ STATUS: SUCESSO"
-            echo ""
-            echo "Próximos passos:"
-            echo "1. Verifique se as partidas aparecem no frontend"
-            echo "2. Acesse a API: ${{ secrets.API_BASE_URL }}/api/schedule"
+          echo "Resposta da API:"
+          echo "$BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Sincronização de partidas concluída com sucesso!"
+            exit 0
           else
-            echo "❌ STATUS: FALHA"
-            echo ""
-            echo "Possíveis causas:"
-            echo "1. Puppeteer não conseguiu iniciar o navegador"
-            echo "2. Site Oracle's Elixir indisponível ou mudou estrutura"
-            echo "3. Problema de conexão com banco de dados"
-            echo "4. Token da API inválido ou expirado"
-            echo ""
-            echo "Verifique os logs acima para detalhes do erro."
+            echo "❌ Erro na sincronização (HTTP $HTTP_CODE)"
+            exit 1
           fi
-          echo "========================================="
