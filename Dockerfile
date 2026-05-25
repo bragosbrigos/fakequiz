@@ -1,8 +1,13 @@
-# Usando imagem base oficial do Node
-FROM node:18-slim
+# Use uma imagem base mais completa para evitar instalações massivas de libs
+FROM node:18-bookworm
 
-# Instalar dependências do sistema necessárias para o Puppeteer/Chrome
-RUN apt-get update && apt-get install -y \
+# Defina variáveis de ambiente para evitar prompts interativos e configurar o Chrome
+ENV DEBIAN_FRONTEND=noninteractive \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Instale apenas o essencial de uma vez para reduzir camadas e tempo
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-ipafont-gothic \
     fonts-wqy-zenhei \
@@ -19,24 +24,28 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     libxtst6 \
     libasound2 \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Definir variável para o Puppeteer encontrar o Chromium do sistema
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
+# Defina o diretório de trabalho
 WORKDIR /app
 
-# Copiar apenas o package-lock primeiro para cache
+# Copie os arquivos de dependência primeiro para aproveitar o cache do Docker
 COPY backend/package*.json ./
+
+# Instale as dependências do Node
 RUN npm ci --only=production
 
-# Copiar o resto do código do backend
+# Copie o restante do código do backend
 COPY backend/src ./src
 COPY backend/index.js ./
+# Se houver outros arquivos na raiz do backend necessários, copie-os também
+# COPY backend/config ./config
 
-# Expor a porta (o Railway define a porta via ENV)
+# Exponha a porta (o Railway injeta a PORT, mas é bom declarar)
 EXPOSE 3001
 
-# Comando de início
+# Comando para iniciar o servidor
 CMD ["node", "index.js"]
